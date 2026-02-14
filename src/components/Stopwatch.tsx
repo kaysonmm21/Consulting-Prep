@@ -25,13 +25,13 @@ export default function Stopwatch({ onComplete }: StopwatchProps) {
 
   return (
     <div className="flex flex-col items-center gap-8 py-12">
-      <p className="text-lg text-[#6B7280]">
+      <p className="text-lg text-gray-500">
         Build your framework on paper. Take your time.
       </p>
 
       <div
         className={`font-mono text-7xl font-bold tabular-nums transition-colors ${
-          overTime ? "text-amber-500" : "text-[#1B2A4A]"
+          overTime ? "text-amber-500" : "text-black"
         } ${overTime ? "animate-pulse" : ""}`}
       >
         {String(minutes).padStart(2, "0")}:{String(secs).padStart(2, "0")}
@@ -46,9 +46,10 @@ export default function Stopwatch({ onComplete }: StopwatchProps) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           onComplete(seconds);
         }}
-        className="rounded-lg bg-[#00A651] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-[#008C44]"
+        className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
       >
         I&apos;m Ready to Present
+        <span aria-hidden="true">&rarr;</span>
       </button>
     </div>
   );

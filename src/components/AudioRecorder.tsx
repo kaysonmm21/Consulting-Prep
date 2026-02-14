@@ -185,7 +185,7 @@ export default function AudioRecorder({ onComplete }: AudioRecorderProps) {
   if (status === "error") {
     return (
       <div className="flex flex-col items-center gap-4 py-12">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+        <div className="rounded-lg bg-red-50 p-6 text-center">
           <p className="text-red-700">{error}</p>
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function AudioRecorder({ onComplete }: AudioRecorderProps) {
   if (status === "requesting") {
     return (
       <div className="flex flex-col items-center gap-4 py-12">
-        <p className="text-[#6B7280]">Requesting microphone access...</p>
+        <p className="text-gray-500">Requesting microphone access...</p>
       </div>
     );
   }
@@ -204,23 +204,23 @@ export default function AudioRecorder({ onComplete }: AudioRecorderProps) {
     return (
       <div className="flex flex-col items-center gap-6 py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[#00A651]" />
-        <p className="text-lg font-semibold text-[#1B2A4A]">Processing your audio...</p>
-        <p className="text-sm text-[#6B7280]">{transcribeProgress}</p>
+        <p className="text-lg font-bold text-black">Processing your audio...</p>
+        <p className="text-sm text-gray-500">{transcribeProgress}</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center gap-8 py-12">
-      <h2 className="text-2xl font-bold text-[#1B2A4A]">Present Your Framework</h2>
-      <p className="text-[#6B7280]">Walk through your framework as if you&apos;re speaking to an interviewer</p>
+      <h2 className="text-3xl font-bold text-black">Present Your Framework</h2>
+      <p className="text-gray-500">Walk through your framework as if you&apos;re speaking to an interviewer</p>
 
       <div className="flex items-center gap-3">
         <span className="relative flex h-3 w-3">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00A651] opacity-75" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-[#00A651]" />
         </span>
-        <span className="font-mono text-lg font-semibold text-[#1B2A4A] tabular-nums">
+        <span className="font-mono text-lg font-semibold text-black tabular-nums">
           {String(minutes).padStart(2, "0")}:{String(secs).padStart(2, "0")}
         </span>
       </div>
@@ -242,9 +242,10 @@ export default function AudioRecorder({ onComplete }: AudioRecorderProps) {
 
       <button
         onClick={() => stopRecording()}
-        className="rounded-lg bg-[#00A651] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-[#008C44]"
+        className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
       >
         I&apos;m Done
+        <span aria-hidden="true">&rarr;</span>
       </button>
     </div>
   );

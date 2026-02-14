@@ -23,13 +23,16 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [transcript, setTranscript] = useState("");
   const [scores, setScores] = useState<EvaluationScores | null>(null);
   const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
-  const [revealedQuestions, setRevealedQuestions] = useState<Set<number>>(new Set());
+  const [clarifyingChat, setClarifyingChat] = useState<{ question: string; answer: string }[]>([]);
+  const [clarifyInput, setClarifyInput] = useState("");
+  const [clarifyLoading, setClarifyLoading] = useState(false);
   const [processingError, setProcessingError] = useState("");
+  const MAX_CLARIFYING_QUESTIONS = 5;
 
   if (!caseData) {
     return (
       <div className="py-12 text-center">
-        <p className="text-[#6B7280]">Case not found.</p>
+        <p className="text-gray-500">Case not found.</p>
       </div>
     );
   }
@@ -51,10 +54,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           frameworkTime,
           presentationTime: duration,
           showedTranscript,
-          clarifyingQuestionsViewed: Array.from(revealedQuestions).map(
-            (i) => caseData.clarifyingQuestions[i].question
-          ),
-          totalClarifyingQuestions: caseData.clarifyingQuestions.length,
+          clarifyingQuestionsAsked: clarifyingChat,
+          totalClarifyingQuestions: MAX_CLARIFYING_QUESTIONS,
         }),
       });
       if (!evaluateRes.ok) {
@@ -91,13 +92,13 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       {phase === "listening" && (
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 py-10">
           {/* Case Slide Card */}
-          <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+          <div className="w-full overflow-hidden rounded-2xl bg-[#F1F1F1]">
             {/* Top accent bar */}
-            <div className="h-1.5 bg-gradient-to-r from-[#1B2A4A] via-[#2D4A7A] to-[#00A651]" />
+            <div className="h-1.5 bg-[#00A651]" />
 
             {/* Instruction banner */}
-            <div className="border-b border-gray-100 bg-gray-50/60 px-8 py-3 text-center">
-              <p className="text-sm font-medium tracking-wide text-[#6B7280]">
+            <div className="bg-[#E8E8E8] px-8 py-3 text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
                 Read carefully and take notes
               </p>
             </div>
@@ -105,20 +106,20 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             {/* Header section */}
             <div className="px-8 pt-8 pb-5">
               <div className="flex flex-col gap-3">
-                <h2 className="text-2xl font-bold leading-tight text-[#1B2A4A]">
+                <h2 className="text-3xl font-bold leading-tight text-black">
                   {caseData.title}
                 </h2>
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center rounded-full border border-[#1B2A4A]/15 bg-[#1B2A4A]/5 px-3 py-1 text-xs font-semibold tracking-wide text-[#1B2A4A]">
+                  <span className="inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-black">
                     {caseData.category}
                   </span>
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide ${
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                       caseData.difficulty === "advanced"
-                        ? "border border-red-200 bg-red-50 text-red-700"
+                        ? "bg-red-50 text-red-700"
                         : caseData.difficulty === "intermediate"
-                        ? "border border-amber-200 bg-amber-50 text-amber-700"
-                        : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                        ? "bg-amber-50 text-amber-700"
+                        : "bg-emerald-50 text-emerald-700"
                     }`}
                   >
                     {caseData.difficulty}
@@ -127,69 +128,146 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="mx-8">
-              <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-            </div>
-
             {/* Case prompt body */}
             <div className="px-8 py-8">
-              <p className="text-base leading-relaxed text-[#1B2A4A]/85" style={{ lineHeight: "1.8" }}>
+              <p className="text-base leading-relaxed text-black/80" style={{ lineHeight: "1.8" }}>
                 {caseData.prompt}
               </p>
             </div>
 
             {/* Bottom section with button */}
-            <div className="border-t border-gray-100 bg-gray-50/40 px-8 py-6 text-center">
+            <div className="bg-[#E8E8E8] px-8 py-6 text-center">
               <button
                 onClick={() => setPhase("clarifying")}
-                className="rounded-lg bg-[#00A651] px-8 py-3.5 text-base font-semibold text-white shadow-sm transition-all hover:bg-[#008C44] hover:shadow-md"
+                className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-8 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-all hover:bg-[#008C44]"
               >
                 I&apos;ve Read the Case
+                <span aria-hidden="true">&rarr;</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Phase: Clarifying Questions */}
+      {/* Phase: Clarifying Questions — Interactive Chat */}
       {phase === "clarifying" && (
-        <div className="flex flex-col gap-6 py-8">
+        <div className="mx-auto flex max-w-2xl flex-col gap-6 py-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-[#1B2A4A]">Clarifying Questions</h2>
-            <p className="text-[#6B7280]">Click to reveal answers — just like asking an interviewer</p>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+              Clarifying Questions
+            </h2>
+            <p className="mt-2 text-sm text-gray-400">
+              Ask questions just like you would in a real interview
+            </p>
           </div>
 
-          <div className="mx-auto flex w-full max-w-lg flex-col gap-3">
-            {caseData.clarifyingQuestions.map((q, i) => (
-              <div key={i} className="rounded-lg border border-gray-100 bg-white shadow-sm">
-                <button
-                  onClick={() => {
-                    const next = new Set(revealedQuestions);
-                    if (next.has(i)) next.delete(i);
-                    else next.add(i);
-                    setRevealedQuestions(next);
-                  }}
-                  className="flex w-full items-center justify-between p-4 text-left"
-                >
-                  <span className="text-sm font-medium text-[#1B2A4A]">{q.question}</span>
-                  <span className="text-[#6B7280]">{revealedQuestions.has(i) ? "▼" : "▶"}</span>
-                </button>
-                {revealedQuestions.has(i) && (
-                  <div className="border-t border-gray-50 px-4 pb-4 pt-2">
-                    <p className="text-sm text-[#6B7280]">{q.answer}</p>
+          {/* Chat messages */}
+          <div className="flex min-h-[300px] flex-col gap-3 overflow-y-auto rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+            {clarifyingChat.length === 0 && (
+              <p className="my-auto text-center text-sm text-gray-300">
+                Type a question below to get started
+              </p>
+            )}
+            {clarifyingChat.map((msg, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                {/* Student question — right aligned */}
+                <div className="flex justify-end">
+                  <div className="max-w-[75%] rounded-2xl bg-[#00A651] px-4 py-2 text-sm text-white">
+                    {msg.question}
                   </div>
-                )}
+                </div>
+                {/* Interviewer answer — left aligned */}
+                <div className="flex justify-start">
+                  <div className="max-w-[75%] rounded-2xl bg-[#F1F1F1] px-4 py-2 text-sm text-black">
+                    {msg.answer}
+                  </div>
+                </div>
               </div>
             ))}
+            {clarifyLoading && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl bg-[#F1F1F1] px-4 py-2 text-sm text-gray-400">
+                  <span className="inline-flex gap-1">
+                    <span className="animate-bounce">.</span>
+                    <span className="animate-bounce" style={{ animationDelay: "0.15s" }}>.</span>
+                    <span className="animate-bounce" style={{ animationDelay: "0.3s" }}>.</span>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Questions remaining counter */}
+          <p className="text-center text-xs text-gray-400">
+            {MAX_CLARIFYING_QUESTIONS - clarifyingChat.length}/{MAX_CLARIFYING_QUESTIONS} questions remaining
+          </p>
+
+          {/* Input bar */}
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!clarifyInput.trim() || clarifyLoading || clarifyingChat.length >= MAX_CLARIFYING_QUESTIONS) return;
+
+              const question = clarifyInput.trim();
+              setClarifyInput("");
+              setClarifyLoading(true);
+
+              try {
+                const res = await fetch("/api/clarify", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    casePrompt: caseData.prompt,
+                    question,
+                    previousQuestions: clarifyingChat,
+                  }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Failed to get response");
+                setClarifyingChat((prev) => [...prev, { question, answer: data.answer }]);
+              } catch (err) {
+                setClarifyingChat((prev) => [
+                  ...prev,
+                  { question, answer: err instanceof Error ? err.message : "Something went wrong — please try again." },
+                ]);
+              } finally {
+                setClarifyLoading(false);
+              }
+            }}
+            className="flex items-center gap-2"
+          >
+            <input
+              type="text"
+              value={clarifyInput}
+              onChange={(e) => setClarifyInput(e.target.value)}
+              placeholder={
+                clarifyingChat.length >= MAX_CLARIFYING_QUESTIONS
+                  ? "You've used all your questions"
+                  : "Ask a clarifying question..."
+              }
+              disabled={clarifyLoading || clarifyingChat.length >= MAX_CLARIFYING_QUESTIONS}
+              className="flex-1 rounded-full border border-gray-200 px-5 py-3 text-sm text-black placeholder-gray-400 outline-none transition-colors focus:border-[#00A651] disabled:bg-gray-50 disabled:text-gray-400"
+            />
+            <button
+              type="submit"
+              disabled={clarifyLoading || !clarifyInput.trim() || clarifyingChat.length >= MAX_CLARIFYING_QUESTIONS}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#00A651] text-white transition-colors hover:bg-[#008C44] disabled:bg-gray-300"
+              aria-label="Send question"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                <path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.115A28.897 28.897 0 003.105 2.289z" />
+              </svg>
+            </button>
+          </form>
+
+          {/* Start building button */}
           <div className="text-center">
             <button
               onClick={() => setPhase("building")}
-              className="rounded-lg bg-[#00A651] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#008C44]"
+              className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
             >
               Start Building My Framework
+              <span aria-hidden="true">&rarr;</span>
             </button>
           </div>
         </div>
@@ -214,11 +292,11 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       {phase === "processing" && (
         <div className="flex flex-col items-center gap-6 py-20">
           {processingError ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+            <div className="rounded-lg bg-red-50 p-6 text-center">
               <p className="mb-4 text-red-700">{processingError}</p>
               <button
                 onClick={() => setPhase("presenting")}
-                className="rounded-lg bg-[#00A651] px-4 py-2 text-sm font-semibold text-white"
+                className="rounded-full bg-[#00A651] px-6 py-2 text-sm font-semibold uppercase tracking-wide text-white"
               >
                 Try Again
               </button>
@@ -226,8 +304,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           ) : (
             <>
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[#00A651]" />
-              <p className="text-lg font-semibold text-[#1B2A4A]">Analyzing your framework...</p>
-              <p className="text-sm text-[#6B7280]">Transcribing audio and evaluating your performance</p>
+              <p className="text-lg font-bold text-black">Analyzing your framework...</p>
+              <p className="text-sm text-gray-500">Transcribing audio and evaluating your performance</p>
             </>
           )}
         </div>

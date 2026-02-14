@@ -31,39 +31,39 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-sm">
+    <nav className="sticky top-0 z-50 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-[#1B2A4A]">Case</span>
-          <span className="text-xl font-bold text-[#00A651]">Coach</span>
+        <Link href="/" className="flex items-center">
+          <span className="text-xl font-bold uppercase tracking-wider text-black">Case</span>
+          <span className="text-xl font-bold uppercase tracking-wider text-black">Coach</span>
         </Link>
         <div className="flex items-center gap-8">
           <Link
             href="/practice"
-            className={`text-sm font-medium transition-colors ${
+            className={`text-xs font-semibold uppercase tracking-widest transition-colors ${
               pathname?.startsWith("/practice")
-                ? "text-[#00A651]"
-                : "text-[#1B2A4A] hover:text-[#00A651]"
+                ? "text-black border-b-2 border-[#00A651] pb-0.5"
+                : "text-black hover:border-b-2 hover:border-black hover:pb-0.5"
             }`}
           >
             Practice
           </Link>
           <Link
             href="/"
-            className={`text-sm font-medium transition-colors ${
+            className={`text-xs font-semibold uppercase tracking-widest transition-colors ${
               pathname === "/"
-                ? "text-[#00A651]"
-                : "text-[#1B2A4A] hover:text-[#00A651]"
+                ? "text-black border-b-2 border-[#00A651] pb-0.5"
+                : "text-black hover:border-b-2 hover:border-black hover:pb-0.5"
             }`}
           >
             Dashboard
           </Link>
           {user && (
             <>
-              <span className="text-xs text-[#6B7280]">{user.email}</span>
+              <span className="text-xs text-gray-500">{user.email}</span>
               <button
                 onClick={handleSignOut}
-                className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-[#6B7280] transition-colors hover:text-[#00A651]"
+                className="text-xs font-semibold uppercase tracking-widest text-gray-500 transition-colors hover:text-black"
               >
                 Sign Out
               </button>

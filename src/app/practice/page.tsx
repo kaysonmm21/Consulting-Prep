@@ -32,22 +32,22 @@ export default function PracticePage() {
   const filtered = filter === "all" ? cases : cases.filter((c) => c.category === filter);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-10">
       <div>
-        <h1 className="text-2xl font-bold text-[#1B2A4A]">Select a Case</h1>
-        <p className="text-[#6B7280]">Choose a case to practice your framework skills</p>
+        <h1 className="text-4xl font-bold text-black sm:text-5xl">Select a Case</h1>
+        <p className="mt-2 text-gray-500">Choose a case to practice your framework skills</p>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-6">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+            className={`text-xs font-semibold uppercase tracking-widest transition-colors ${
               filter === cat
-                ? "bg-[#1B2A4A] text-white"
-                : "bg-white text-[#1B2A4A] border border-gray-200 hover:border-[#1B2A4A]"
+                ? "text-black border-b-2 border-[#00A651] pb-0.5"
+                : "text-gray-500 hover:text-black pb-0.5"
             }`}
           >
             {categoryLabels[cat]}
@@ -61,7 +61,7 @@ export default function PracticePage() {
           <Link
             key={c.id}
             href={`/practice/${c.id}`}
-            className="group rounded-lg border border-gray-100 bg-white p-6 shadow-sm transition-all hover:border-[#00A651]/30 hover:shadow-md"
+            className="group rounded-lg bg-[#F1F1F1] p-6 transition-all hover:bg-[#E8E8E8]"
           >
             <div className="mb-3 flex gap-2">
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${categoryColors[c.category]}`}>
@@ -71,10 +71,10 @@ export default function PracticePage() {
                 {c.difficulty}
               </span>
             </div>
-            <h3 className="mb-2 text-lg font-bold text-[#1B2A4A] group-hover:text-[#00A651] transition-colors">
+            <h3 className="mb-2 text-lg font-bold text-black transition-colors">
               {c.title}
             </h3>
-            <p className="line-clamp-2 text-sm text-[#6B7280]">{c.prompt}</p>
+            <p className="line-clamp-2 text-sm text-gray-500">{c.prompt}</p>
           </Link>
         ))}
       </div>

@@ -56,9 +56,10 @@ export async function getStats() {
   }
 
   const scores = sessions.map((s) => s.scores.overall);
-  const avgScore =
-    Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
-  const bestScore = Math.max(...scores);
+  const avgScore = Math.round(
+    (scores.reduce((a, b) => a + b, 0) / scores.length) * 20
+  );
+  const bestScore = Math.round(Math.max(...scores) * 20);
 
   // Calculate streak (consecutive days with sessions)
   const today = new Date();

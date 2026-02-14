@@ -7,9 +7,9 @@ import { cases } from "@/lib/cases";
 import { SessionResult } from "@/lib/types";
 
 function scoreColor(score: number) {
-  if (score <= 2) return "text-red-500";
-  if (score <= 3) return "text-amber-500";
-  if (score <= 4) return "text-green-500";
+  if (score <= 40) return "text-red-500";
+  if (score <= 60) return "text-amber-500";
+  if (score <= 80) return "text-green-500";
   return "text-green-600";
 }
 
@@ -29,20 +29,21 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-12">
       {/* Hero */}
-      <div className="flex flex-col items-center gap-6 py-12 text-center">
-        <h1 className="text-4xl font-bold text-[#1B2A4A]">
-          Master the Art of Case Frameworks
+      <div className="flex flex-col items-center gap-6 py-16 text-center">
+        <h1 className="text-5xl font-bold leading-tight text-black sm:text-6xl">
+          Master the Art of<br />Case Frameworks
         </h1>
-        <p className="max-w-lg text-lg text-[#6B7280]">
+        <p className="max-w-lg text-lg font-normal text-gray-500">
           Practice with real consulting cases. Present your framework. Get instant AI-powered feedback.
         </p>
         <Link
           href="/practice"
-          className="rounded-lg bg-[#00A651] px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-[#008C44]"
+          className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
         >
           Start Practicing
+          <span aria-hidden="true">&rarr;</span>
         </Link>
       </div>
 
@@ -57,13 +58,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
             { label: "Total Sessions", value: stats.totalSessions },
-            { label: "Average Score", value: `${stats.avgScore}/5` },
-            { label: "Best Score", value: `${stats.bestScore}/5` },
+            { label: "Average Score", value: `${stats.avgScore}/100` },
+            { label: "Best Score", value: `${stats.bestScore}/100` },
             { label: "Day Streak", value: stats.streak },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-gray-100 bg-white p-5 text-center shadow-sm">
-              <p className="text-2xl font-bold text-[#1B2A4A]">{stat.value}</p>
-              <p className="text-xs text-[#6B7280]">{stat.label}</p>
+            <div key={stat.label} className="rounded-lg bg-[#F1F1F1] p-5 text-center">
+              <p className="text-2xl font-bold text-black">{stat.value}</p>
+              <p className="text-xs text-gray-500">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -72,21 +73,21 @@ export default function Dashboard() {
       {/* Recent Sessions */}
       {!loading && sessions.length > 0 && (
         <div>
-          <h2 className="mb-4 text-lg font-bold text-[#1B2A4A]">Recent Sessions</h2>
+          <h2 className="mb-4 text-lg font-bold text-black">Recent Sessions</h2>
           <div className="flex flex-col gap-3">
             {sessions.slice(0, 5).map((session) => {
               const caseData = cases.find((c) => c.id === session.caseId);
               return (
                 <div
                   key={session.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-100 bg-white p-4 shadow-sm"
+                  className="flex items-center justify-between rounded-lg bg-[#F1F1F1] p-4"
                 >
                   <div>
-                    <p className="font-semibold text-[#1B2A4A]">{caseData?.title || session.caseId}</p>
-                    <p className="text-xs text-[#6B7280]">{new Date(session.date).toLocaleDateString()}</p>
+                    <p className="font-semibold text-black">{caseData?.title || session.caseId}</p>
+                    <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString()}</p>
                   </div>
-                  <span className={`text-lg font-bold ${scoreColor(session.scores.overall)}`}>
-                    {session.scores.overall}/5
+                  <span className={`text-lg font-bold ${scoreColor(Math.round(session.scores.overall * 20))}`}>
+                    {Math.round(session.scores.overall * 20)}/100
                   </span>
                 </div>
               );
@@ -97,16 +98,16 @@ export default function Dashboard() {
 
       {/* Tips */}
       <div>
-        <h2 className="mb-4 text-lg font-bold text-[#1B2A4A]">Quick Tips</h2>
+        <h2 className="mb-4 text-lg font-bold text-black">Quick Tips</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
             { title: "Start Top-Down", body: "State your buckets upfront before diving into details. Signpost: \"I'd break this into three areas...\"" },
             { title: "Tailor Your Framework", body: "Avoid memorized structures. Build each framework specifically for the case prompt you're given." },
             { title: "Prioritize", body: "Tell the interviewer which bucket you'd explore first and why. This shows business judgment." },
           ].map((tip) => (
-            <div key={tip.title} className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
-              <h3 className="mb-2 text-sm font-bold text-[#1B2A4A]">{tip.title}</h3>
-              <p className="text-xs leading-relaxed text-[#6B7280]">{tip.body}</p>
+            <div key={tip.title} className="rounded-lg bg-[#F1F1F1] p-5">
+              <h3 className="mb-2 text-sm font-bold text-black">{tip.title}</h3>
+              <p className="text-xs leading-relaxed text-gray-500">{tip.body}</p>
             </div>
           ))}
         </div>

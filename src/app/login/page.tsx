@@ -41,19 +41,19 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#1B2A4A]">
+          <h1 className="text-3xl font-bold text-black">
             {isSignUp ? "Create Account" : "Welcome Back"}
           </h1>
-          <p className="mt-2 text-sm text-[#6B7280]">
+          <p className="mt-2 text-sm text-gray-500">
             {isSignUp ? "Sign up to save your practice history" : "Sign in to continue practicing"}
           </p>
         </div>
 
-        <form onSubmit={handleEmailAuth} className="space-y-4">
+        <form onSubmit={handleEmailAuth} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-[#1B2A4A]">
+            <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wide text-black">
               Email
             </label>
             <input
@@ -62,12 +62,12 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-[#1B2A4A] outline-none focus:border-[#00A651] focus:ring-1 focus:ring-[#00A651]"
+              className="mt-2 w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-2.5 text-sm text-black outline-none transition-colors focus:border-[#00A651]"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-[#1B2A4A]">
+            <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wide text-black">
               Password
             </label>
             <input
@@ -77,7 +77,7 @@ export default function LoginPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-[#1B2A4A] outline-none focus:border-[#00A651] focus:ring-1 focus:ring-[#00A651]"
+              className="mt-2 w-full border-0 border-b-2 border-gray-200 bg-transparent px-0 py-2.5 text-sm text-black outline-none transition-colors focus:border-[#00A651]"
               placeholder="At least 6 characters"
             />
           </div>
@@ -92,13 +92,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-[#00A651] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#008C44] disabled:opacity-50"
+            className="w-full rounded-full bg-[#00A651] py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44] disabled:opacity-50"
           >
             {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-[#6B7280]">
+        <p className="text-center text-sm text-gray-500">
           {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
           <button
             onClick={() => {
@@ -106,7 +106,7 @@ export default function LoginPage() {
               setError("");
               setMessage("");
             }}
-            className="font-medium text-[#00A651] hover:underline"
+            className="font-semibold text-[#00A651] hover:underline"
           >
             {isSignUp ? "Sign In" : "Sign Up"}
           </button>

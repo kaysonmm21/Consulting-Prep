@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
       presentationTime,
       showedTranscript,
       clarifyingQuestionsViewed,
+      clarifyingQuestionsAsked,
       totalClarifyingQuestions,
     } = body;
 
@@ -29,7 +30,8 @@ ${transcript}
 - Time spent building framework: ${frameworkTime} seconds
 - Time spent presenting: ${presentationTime} seconds
 - Showed case transcript (instead of just listening): ${showedTranscript}
-- Clarifying questions asked: ${clarifyingQuestionsViewed?.length || 0} out of ${totalClarifyingQuestions} available
+- Clarifying questions asked: ${clarifyingQuestionsAsked?.length || clarifyingQuestionsViewed?.length || 0} out of ${totalClarifyingQuestions} available
+${clarifyingQuestionsAsked?.length ? `\n## Clarifying Questions Asked by Candidate\n${clarifyingQuestionsAsked.map((q: { question: string; answer: string }, i: number) => `Q${i + 1}: ${q.question}\nInterviewer response: ${q.answer}`).join("\n\n")}` : ""}
 
 ## Evaluation Instructions
 
