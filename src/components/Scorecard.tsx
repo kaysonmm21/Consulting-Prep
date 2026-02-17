@@ -45,6 +45,41 @@ function ScoreBar({ label, score, comment }: { label: string; score: number; com
   );
 }
 
+function SuggestionCard({ index, suggestion }: { index: number; suggestion: { title: string; detail: string } | string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Handle both old string[] format and new {title, detail} format
+  const isStructured = typeof suggestion === "object" && suggestion !== null;
+  const title = isStructured ? suggestion.title : suggestion;
+  const detail = isStructured ? suggestion.detail : null;
+
+  return (
+    <button
+      onClick={() => detail && setExpanded(!expanded)}
+      className={`w-full text-left rounded-lg bg-white p-4 transition-all ${detail ? "cursor-pointer hover:bg-gray-50" : ""}`}
+    >
+      <div className="flex gap-3">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00A651] text-xs font-bold text-white">
+          {index + 1}
+        </span>
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-black">{title}</p>
+            {detail && (
+              <span className="ml-2 shrink-0 text-xs text-gray-400">
+                {expanded ? "▲" : "▼"}
+              </span>
+            )}
+          </div>
+          {expanded && detail && (
+            <p className="mt-2 text-xs leading-relaxed text-gray-500">{detail}</p>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
 export default function Scorecard({
   scores,
   feedback,
@@ -69,6 +104,18 @@ export default function Scorecard({
         </div>
       </div>
 
+      {/* Suggestions — moved ABOVE score breakdown */}
+      {feedback.suggestions && feedback.suggestions.length > 0 && (
+        <div className="rounded-lg bg-[#F1F1F1] p-6">
+          <h3 className="mb-4 text-2xl font-bold text-black">How to Improve Your Framework</h3>
+          <div className="space-y-2">
+            {feedback.suggestions.map((suggestion, i) => (
+              <SuggestionCard key={i} index={i} suggestion={suggestion} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Score Breakdown */}
       <div>
         <h3 className="mb-4 text-2xl font-bold text-black">Score Breakdown</h3>
@@ -81,21 +128,6 @@ export default function Scorecard({
           <ScoreBar label="Delivery" score={scores.delivery} comment={feedback.deliveryComment} />
         </div>
       </div>
-
-      {/* Suggestions */}
-      {feedback.suggestions && feedback.suggestions.length > 0 && (
-        <div className="rounded-lg bg-[#F1F1F1] p-6">
-          <h3 className="mb-4 text-2xl font-bold text-black">How to Improve Your Framework</h3>
-          <ul className="space-y-3">
-            {feedback.suggestions.map((suggestion, i) => (
-              <li key={i} className="flex gap-3 text-sm text-black">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00A651] text-xs font-bold text-white">{i + 1}</span>
-                {suggestion}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* Transcript */}
       <div>

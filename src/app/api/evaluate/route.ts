@@ -45,12 +45,17 @@ Evaluate:
 5. **Clarifying Questions** — Quality assessment based on how many and which clarifying questions they chose to ask.
 6. **Delivery** — Was the presentation structured (top-down), clear, and confident? Did they signpost?
 
-Also provide 3-5 specific, actionable suggestions for how the candidate could improve their framework. These should be changes to THEIR framework — not a whole new one. Examples: "Add a bucket for X to make it more MECE", "Remove Y because it overlaps with Z", "Rename bucket A to be more specific to this case", "Add 2-3 sub-points under your X bucket". Keep the right level of depth in mind — candidates only have 2-3 minutes, so a good framework has 3-4 buckets with 2-3 short sub-points each (e.g. bullet-point questions or areas to explore). Don't suggest overly detailed or academic frameworks.
+Also provide exactly 5 specific, actionable suggestions for how the candidate could improve their framework. These should be changes to THEIR framework — not a whole new one. Examples: "Add a bucket for X to make it more MECE", "Remove Y because it overlaps with Z", "Rename bucket A to be more specific to this case", "Add 2-3 sub-points under your X bucket". Keep the right level of depth in mind — candidates only have 2-3 minutes, so a good framework has 3-4 buckets with 2-3 short sub-points each (e.g. bullet-point questions or areas to explore). Don't suggest overly detailed or academic frameworks.
+
+Each suggestion must be an object with:
+- "title": A short 1-sentence actionable suggestion (shown by default)
+- "detail": 2-3 sentences of deeper explanation — why this matters and how to implement it (shown when expanded)
 
 IMPORTANT — Keep all feedback concise and direct:
 - Each dimension comment: 1 sentence stating what was done well or poorly, plus 1 concrete action to improve. No filler.
 - "topStrength" and "topImprovement": 1 sentence each
-- Each suggestion: 1 sentence, actionable and specific
+- Each suggestion title: 1 sentence, actionable and specific
+- Each suggestion detail: 2-3 sentences with deeper context
 
 Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
 {
@@ -70,7 +75,7 @@ Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
     "depthComment": "",
     "clarifyingQuestionsComment": "",
     "deliveryComment": "",
-    "suggestions": ["", "", ""],
+    "suggestions": [{"title": "", "detail": ""}, {"title": "", "detail": ""}, {"title": "", "detail": ""}, {"title": "", "detail": ""}, {"title": "", "detail": ""}],
     "topStrength": "",
     "topImprovement": ""
   }

@@ -40,7 +40,7 @@ export interface EvaluationFeedback {
   depthComment: string;
   clarifyingQuestionsComment: string;
   deliveryComment: string;
-  suggestions: string[];
+  suggestions: { title: string; detail: string }[];
   topStrength: string;
   topImprovement: string;
 }

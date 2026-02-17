@@ -220,6 +220,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     casePrompt: caseData.prompt,
+                    caseId: caseData.id,
                     question,
                     previousQuestions: clarifyingChat,
                   }),

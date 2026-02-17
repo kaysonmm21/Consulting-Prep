@@ -12,6 +12,11 @@ export const cases: CasePrompt[] = [
       { question: 'What does the fleet look like?', answer: 'They operate a mixed fleet of 30 aircraft across 4 different types, which creates maintenance complexity. The average fleet age is 14 years.' },
       { question: 'What is the cost per available seat kilometer vs. competitors?', answer: 'Their CASK is about 15% higher than comparable regional carriers, primarily driven by fuel inefficiency from older aircraft and high maintenance costs.' },
       { question: 'Are there any labor agreements or contractual constraints?', answer: 'Yes, they have strong union agreements that make workforce reduction difficult. Pilot contracts are renegotiated next year.' },
+      { question: 'What is the annual revenue and how has it trended?', answer: 'Annual revenue is approximately €1.2 billion. Revenue grew 8% year-over-year but costs grew 14%, driven by fuel, maintenance, and labor.' },
+      { question: 'Who are the main competitors on these routes?', answer: 'Low-cost carriers like Ryanair and EasyJet compete on about 60% of their routes, undercutting fares by 25-40%. Legacy carriers overlap on another 20% of routes.' },
+      { question: 'What is the geographic breakdown of routes?', answer: 'About 40% of routes are domestic or short-haul within Western Europe, 35% connect to Eastern Europe, and 25% are Mediterranean leisure routes.' },
+      { question: 'What are management\'s priorities or constraints?', answer: 'The board wants a clear plan within 3 months. They are open to route cuts but want to preserve at least 30 routes to maintain network value. A merger is a last resort.' },
+      { question: 'Have there been any recent changes in fuel costs or regulations?', answer: 'Fuel costs rose 30% over the past 18 months. New EU emissions regulations will add an estimated 3-5% cost increase starting next year.' },
     ],
     exampleFramework: {
       buckets: [
@@ -34,6 +39,11 @@ export const cases: CasePrompt[] = [
       { question: 'Who are the main competitors in China?', answer: 'Starbucks dominates premium coffee with about 6,000 stores. Luckin Coffee is the largest local player with over 10,000 locations, primarily focused on convenience and delivery.' },
       { question: 'What is the client revenue model?', answer: 'Average ticket is $6 in the US. They are known for a premium sit-down experience with specialty drinks. About 70% of revenue is beverages, 30% food.' },
       { question: 'Does the client have international experience?', answer: 'They have 30 locations in Canada but no experience outside North America. They have no existing supply chain or brand recognition in Asia.' },
+      { question: 'What are the client\'s financials and how much can they invest?', answer: 'Annual revenue is $800 million with 12% EBITDA margins. They have $150 million in cash and could raise additional debt. The board has earmarked up to $100 million for international expansion.' },
+      { question: 'What do Chinese consumers prefer in coffee?', answer: 'Younger urban consumers (18-35) are driving growth and prefer trendy, Instagram-worthy experiences. Delivery and mobile ordering account for about 40% of coffee sales. Tea-based drinks remain very popular.' },
+      { question: 'What are the regulatory barriers to entering China?', answer: 'Foreign companies typically need a local partner or joint venture to navigate regulations. Food safety certifications are strict and take 6-12 months. There are restrictions on foreign ownership in some retail categories.' },
+      { question: 'Which cities would be the best entry points?', answer: 'Tier 1 cities (Shanghai, Beijing, Guangzhou, Shenzhen) have the highest coffee consumption per capita and the most premium consumers, but also the highest rent and competition. Tier 2 cities are growing faster with less competition.' },
+      { question: 'What is the timeline the CEO has in mind?', answer: 'The CEO wants a recommendation within 2 months and, if the answer is to enter, wants to open the first stores within 18 months. They are looking at a 5-year plan for the market.' },
     ],
     exampleFramework: {
       buckets: [
@@ -56,6 +66,11 @@ export const cases: CasePrompt[] = [
       { question: 'What is the strategic rationale?', answer: 'The client sees telehealth as critical for patient retention and wants to offer virtual care as a feeder system for in-person hospital visits for complex procedures.' },
       { question: 'What is the competitive landscape for telehealth?', answer: 'Teladoc and Amwell are the largest players. Most major hospital systems are building or buying telehealth capabilities. First-mover advantage is diminishing.' },
       { question: 'What are comparable deal multiples?', answer: 'Recent telehealth acquisitions have been done at 8-12x revenue for growing platforms. The asking price of $200M implies a 5x revenue multiple.' },
+      { question: 'What is the revenue growth rate of the startup?', answer: 'Revenue has been growing at 45% year-over-year. Active users grew from 200,000 to 500,000 in the past 18 months. However, user growth has started to decelerate in the last two quarters.' },
+      { question: 'What is the client\'s current revenue and financial position?', answer: 'The hospital network generates $4.5 billion in annual revenue with 6% operating margins. They have $300 million in available capital and a strong credit rating for additional borrowing.' },
+      { question: 'What technology platform does the startup use?', answer: 'The startup has a proprietary platform built on modern cloud infrastructure. It integrates with major EHR systems including Epic and Cerner. The client currently uses Epic across all hospitals.' },
+      { question: 'Are there any regulatory or compliance concerns?', answer: 'The startup is HIPAA-compliant and licensed to operate in 35 states. Post-pandemic telehealth reimbursement rules are still evolving and could impact revenue if CMS tightens regulations.' },
+      { question: 'What does the startup\'s customer base look like?', answer: 'About 60% of users are commercially insured, 25% Medicare, and 15% Medicaid. Average revenue per user is about $80 per year. Retention rate is 70% annually.' },
     ],
     exampleFramework: {
       buckets: [
@@ -78,6 +93,11 @@ export const cases: CasePrompt[] = [
       { question: 'What does the customer base look like?', answer: 'Customers range from 10-person teams to 500-person departments. About 60% are small teams under 50, 30% mid-size 50-200, and 10% large 200+.' },
       { question: 'How does pricing compare to competitors?', answer: 'Most competitors use per-seat pricing ranging from $10-30 per user per month. The flat fee is cheaper for large teams but expensive for small teams.' },
       { question: 'What features do customers value most?', answer: 'Large customers value advanced analytics and integrations. Small customers primarily use basic task management and collaboration features.' },
+      { question: 'What is the cost to serve different customer segments?', answer: 'Large customers use 5x more storage and API calls than small customers but pay the same $500. Support tickets are 3x higher for large customers. The cost to serve a large customer is roughly $350/month vs. $80/month for a small one.' },
+      { question: 'What does the sales pipeline look like?', answer: 'They lose about 40% of prospects at the pricing stage. Small companies say $500/month is too expensive to try. Enterprise prospects say the flat fee feels too simple and want dedicated support and SLAs.' },
+      { question: 'Have they tested any pricing changes?', answer: 'They ran a small A/B test offering $200/month for teams under 25 users, which increased conversions 60% for that segment. But they haven\'t rolled it out due to concerns about cannibalizing existing customers.' },
+      { question: 'What is the product roadmap?', answer: 'They are building enterprise features including SSO, audit logs, and advanced permissions. These are expected to ship in Q3. They also plan AI-powered project forecasting as a premium add-on.' },
+      { question: 'Who makes the buying decision?', answer: 'For small teams, it is usually the team lead or department manager. For mid-size and large companies, procurement and IT are involved, and they typically require annual contracts and security reviews.' },
     ],
     exampleFramework: {
       buckets: [
@@ -100,6 +120,11 @@ export const cases: CasePrompt[] = [
       { question: 'Has order volume changed?', answer: 'Order volume has increased 40% year over year, but fulfillment center capacity has not been expanded. They are running at approximately 95% capacity.' },
       { question: 'What shipping carriers do they use?', answer: 'They use a single carrier for 90% of shipments. That carrier has raised rates 20% and has been experiencing service delays in certain regions.' },
       { question: 'Have there been any changes to product mix?', answer: 'Yes, they launched a customization option 6 months ago that requires additional processing time. Customized orders now represent 25% of total orders.' },
+      { question: 'What is the company\'s annual revenue?', answer: 'Annual revenue is $180 million, up from $130 million last year. However, customer satisfaction scores have dropped from 4.2 to 3.1 out of 5 due to delivery issues.' },
+      { question: 'What does the fulfillment process look like end to end?', answer: 'Orders are received, picked from inventory, packed, labeled, and handed off to the carrier. Standard orders take about 4 hours from order to ship. Customized orders take 24-48 hours due to embroidery and printing.' },
+      { question: 'Are there any geographic patterns to the delays?', answer: 'Yes, the Midwest and Mountain states experience the worst delays since they are farthest from both fulfillment centers. Average delivery to those regions is 9-10 days.' },
+      { question: 'What is the return rate and how does it relate to delays?', answer: 'Return rate has increased from 8% to 14%. About half of returns cite "arrived too late" or "no longer needed" as the reason, suggesting delivery delays are driving returns.' },
+      { question: 'What technology systems manage fulfillment?', answer: 'They use a legacy warehouse management system that was implemented 5 years ago. It does not support real-time inventory tracking or dynamic order routing between the two facilities.' },
     ],
     exampleFramework: {
       buckets: [
@@ -122,6 +147,11 @@ export const cases: CasePrompt[] = [
       { question: 'Has the competitive landscape changed?', answer: 'Yes, two major e-commerce competitors have entered the market in the last 18 months, primarily competing on price in the electronics category.' },
       { question: 'Have there been any changes to the cost structure?', answer: 'Wages have increased about 8% due to new minimum wage laws in several states, and shipping costs are up roughly 12% due to supply chain disruptions.' },
       { question: 'Are all stores experiencing the same decline?', answer: 'No. About 60 stores in urban areas are performing well. The decline is concentrated in suburban and rural locations.' },
+      { question: 'What is the annual revenue and gross margin?', answer: 'Annual revenue is approximately $2.4 billion, relatively flat over two years. Gross margin has declined from 42% to 38%, primarily driven by markdowns in electronics and increased shipping costs.' },
+      { question: 'What are the customer demographics and shopping behavior?', answer: 'Core customers are 35-55 year olds. In-store traffic has declined 12% overall, but online sales have grown 25% and now represent 18% of total revenue. Online orders have lower margins due to shipping and returns.' },
+      { question: 'What is the store lease situation?', answer: 'About 40 stores have leases expiring in the next 2 years. Average lease cost is $350,000 per year per store. The 40 underperforming stores average only $1.5 million in annual revenue each.' },
+      { question: 'Has the company tried any cost-cutting measures?', answer: 'They reduced store staff by 10% last year, which saved $30 million but led to lower customer satisfaction scores and a 5% drop in conversion rates in affected stores.' },
+      { question: 'What is the e-commerce strategy?', answer: 'They launched a basic e-commerce site 2 years ago but have underinvested in it. The site lacks personalization, the mobile experience is poor, and they do not offer buy-online-pickup-in-store (BOPIS).' },
     ],
     exampleFramework: {
       buckets: [
