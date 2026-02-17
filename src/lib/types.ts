@@ -27,30 +27,20 @@ export interface EvaluationScores {
   overall: number;
   mece: number;
   caseFit: number;
-  prioritization: number;
+  hypothesisAndPrioritization: number;
   depth: number;
-  hypothesis: number;
   clarifyingQuestions: number;
   delivery: number;
-  fillerWords: number;
 }
 
 export interface EvaluationFeedback {
-  summary: string;
   meceComment: string;
   caseFitComment: string;
-  prioritizationComment: string;
+  hypothesisAndPrioritizationComment: string;
   depthComment: string;
-  hypothesisComment: string;
   clarifyingQuestionsComment: string;
   deliveryComment: string;
-  fillerWordsComment: string;
-  fillerWordCount: number;
-  fillerWordList: string[];
-  suggestedFramework: {
-    buckets: { name: string; subPoints: string[] }[];
-    explanation: string;
-  };
+  suggestions: string[];
   topStrength: string;
   topImprovement: string;
 }

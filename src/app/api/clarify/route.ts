@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
+  if (!process.env.GROQ_API_KEY) {
+    return NextResponse.json({ error: "Groq API key not configured" }, { status: 500 });
   }
 
   try {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
             .join("\n\n")
         : "None yet.";
 
-    const prompt = `You are a consulting interviewer at a top firm (McKinsey, BCG, or Bain). A candidate has just read the case prompt and is now asking clarifying questions before building their framework.
+    const systemPrompt = `You are a consulting interviewer at a top firm (McKinsey, BCG, or Bain). A candidate has just read the case prompt and is now asking clarifying questions before building their framework.
 
 ## Your Role
 - Act as a friendly but professional interviewer
@@ -34,47 +34,30 @@ export async function POST(request: NextRequest) {
 ${casePrompt}
 
 ## Previous Questions in This Session
-${previousQAContext}
+${previousQAContext}`;
 
-## Candidate's Current Question
-${question}
-
-Respond with ONLY a JSON object in this exact format (no markdown, no code fences, just raw JSON):
-{"answer": "Your concise interviewer response here"}`;
-
-    const fetchGemini = async () => {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 512,
-              responseMimeType: "application/json",
-            },
-          }),
-        }
-      );
-      return res;
-    };
-
-    let response = await fetchGemini();
-
-    // Retry once after a short delay for transient errors (429, 500, 503)
-    if (response.status === 429 || response.status === 500 || response.status === 503) {
-      console.warn(`Gemini API returned ${response.status}, retrying in 2s...`);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      response = await fetchGemini();
-    }
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: question },
+        ],
+        temperature: 0.7,
+        max_tokens: 256,
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Gemini API error:", response.status, errorText);
-      const isQuota = response.status === 429 || errorText.includes("RESOURCE_EXHAUSTED") || errorText.includes("quota");
-      const isOverloaded = response.status === 503 || errorText.includes("UNAVAILABLE");
+      console.error("Groq API error:", response.status, errorText);
+      const isQuota = response.status === 429;
+      const isOverloaded = response.status === 503;
       return NextResponse.json(
         {
           error: isQuota
@@ -88,23 +71,9 @@ Respond with ONLY a JSON object in this exact format (no markdown, no code fence
     }
 
     const data = await response.json();
-    let content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const answer = data.choices?.[0]?.message?.content?.trim() || "I'm not sure how to answer that — let's move on.";
 
-    // Strip markdown code fences if present
-    const fenceMatch = content.trim().match(/^```(?:json|JSON)?\s*\n?([\s\S]*?)\n?\s*```$/);
-    if (fenceMatch) {
-      content = fenceMatch[1].trim();
-    }
-
-    let result;
-    try {
-      result = JSON.parse(content);
-    } catch {
-      // If JSON parse fails, treat the raw text as the answer
-      result = { answer: content.trim() };
-    }
-
-    return NextResponse.json({ answer: result.answer || result.Answer || content.trim() });
+    return NextResponse.json({ answer });
   } catch (err) {
     console.error("Clarify error:", err);
     const message =

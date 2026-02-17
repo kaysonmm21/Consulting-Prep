@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 
 export async function POST(request: NextRequest) {
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
+  if (!process.env.GROQ_API_KEY) {
+    return NextResponse.json({ error: "Groq API key not configured" }, { status: 500 });
   }
 
   try {
@@ -14,18 +13,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
     }
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const groqForm = new FormData();
+    groqForm.append("file", audioFile);
+    groqForm.append("model", "whisper-large-v3-turbo");
+    groqForm.append("response_format", "json");
+    groqForm.append("language", "en");
 
-    const transcription = await openai.audio.transcriptions.create({
-      model: "whisper-1",
-      file: audioFile,
-      response_format: "verbose_json",
+    const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: groqForm,
     });
 
-    return NextResponse.json({
-      transcript: transcription.text,
-      words: (transcription as unknown as Record<string, unknown>).words || [],
-    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Groq Whisper error:", response.status, errorText);
+      return NextResponse.json(
+        { error: response.status === 429 ? "API quota exceeded — please wait and try again" : "Transcription failed" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json({ transcript: data.text });
   } catch (err) {
     console.error("Transcription error:", err);
     return NextResponse.json({ error: "Transcription failed" }, { status: 500 });

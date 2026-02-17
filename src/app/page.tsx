@@ -78,18 +78,24 @@ export default function Dashboard() {
             {sessions.slice(0, 5).map((session) => {
               const caseData = cases.find((c) => c.id === session.caseId);
               return (
-                <div
+                <Link
                   key={session.id}
-                  className="flex items-center justify-between rounded-lg bg-[#F1F1F1] p-4"
+                  href={`/session/${session.id}`}
+                  className="flex items-center justify-between rounded-lg bg-[#F1F1F1] p-4 transition-colors hover:bg-[#E8E8E8]"
                 >
                   <div>
                     <p className="font-semibold text-black">{caseData?.title || session.caseId}</p>
                     <p className="text-xs text-gray-500">{new Date(session.date).toLocaleDateString()}</p>
                   </div>
-                  <span className={`text-lg font-bold ${scoreColor(Math.round(session.scores.overall * 20))}`}>
-                    {Math.round(session.scores.overall * 20)}/100
-                  </span>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-lg font-bold ${scoreColor(Math.round(session.scores.overall * 20))}`}>
+                      {Math.round(session.scores.overall * 20)}/100
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-gray-400">
+                      <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </Link>
               );
             })}
           </div>

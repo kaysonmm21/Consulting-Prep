@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
+    return NextResponse.json({ error: "No AI API key configured" }, { status: 500 });
   }
 
   try {
@@ -40,17 +40,17 @@ Score each dimension from 1-5 (1=Poor, 2=Below Average, 3=Average, 4=Good, 5=Exc
 Evaluate:
 1. **MECE** — Are the framework buckets mutually exclusive (no overlap) and collectively exhaustive (covers all key areas)?
 2. **Case Fit** — Is the framework specifically tailored to this case, or is it a generic/memorized structure?
-3. **Prioritization** — Did the candidate indicate which areas to explore first and provide reasoning?
+3. **Hypothesis & Prioritization** — Did the candidate state an initial hypothesis and indicate which areas to explore first with reasoning?
 4. **Depth** — Are there meaningful sub-points under each bucket? Are they specific and actionable?
-5. **Hypothesis** — Did the candidate state an initial hypothesis before or during the framework?
-6. **Clarifying Questions** — Quality assessment based on how many and which clarifying questions they chose to ask.
-7. **Delivery** — Was the presentation structured (top-down), clear, and confident? Did they signpost?
-8. **Filler Words** — Count filler words (um, uh, like, so basically, you know, kind of, sort of, I mean, right). Lower count = higher score.
+5. **Clarifying Questions** — Quality assessment based on how many and which clarifying questions they chose to ask.
+6. **Delivery** — Was the presentation structured (top-down), clear, and confident? Did they signpost?
 
-Also provide:
-- A suggested stronger framework for this specific case
-- The candidate's top strength and #1 area for improvement
-- Specific, actionable feedback for each dimension
+Also provide 3-5 specific, actionable suggestions for how the candidate could improve their framework. These should be changes to THEIR framework — not a whole new one. Examples: "Add a bucket for X to make it more MECE", "Remove Y because it overlaps with Z", "Rename bucket A to be more specific to this case", "Add 2-3 sub-points under your X bucket". Keep the right level of depth in mind — candidates only have 2-3 minutes, so a good framework has 3-4 buckets with 2-3 short sub-points each (e.g. bullet-point questions or areas to explore). Don't suggest overly detailed or academic frameworks.
+
+IMPORTANT — Keep all feedback concise and direct:
+- Each dimension comment: 1 sentence stating what was done well or poorly, plus 1 concrete action to improve. No filler.
+- "topStrength" and "topImprovement": 1 sentence each
+- Each suggestion: 1 sentence, actionable and specific
 
 Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
 {
@@ -58,29 +58,19 @@ Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
     "overall": 0,
     "mece": 0,
     "caseFit": 0,
-    "prioritization": 0,
+    "hypothesisAndPrioritization": 0,
     "depth": 0,
-    "hypothesis": 0,
     "clarifyingQuestions": 0,
-    "delivery": 0,
-    "fillerWords": 0
+    "delivery": 0
   },
   "feedback": {
-    "summary": "",
     "meceComment": "",
     "caseFitComment": "",
-    "prioritizationComment": "",
+    "hypothesisAndPrioritizationComment": "",
     "depthComment": "",
-    "hypothesisComment": "",
     "clarifyingQuestionsComment": "",
     "deliveryComment": "",
-    "fillerWordsComment": "",
-    "fillerWordCount": 0,
-    "fillerWordList": [],
-    "suggestedFramework": {
-      "buckets": [{"name": "", "subPoints": [""]}],
-      "explanation": ""
-    },
+    "suggestions": ["", "", ""],
     "topStrength": "",
     "topImprovement": ""
   }
@@ -88,7 +78,7 @@ Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
 
     const fetchGemini = async () => {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -96,7 +86,7 @@ Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 4096,
               responseMimeType: "application/json",
             },
           }),
@@ -105,34 +95,62 @@ Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
       return res;
     };
 
-    let response = await fetchGemini();
+    let content = "";
 
-    // Retry once after a short delay for transient errors (429, 500, 503)
-    if (response.status === 429 || response.status === 500 || response.status === 503) {
-      console.warn(`Gemini API returned ${response.status}, retrying in 2s...`);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      response = await fetchGemini();
+    // Try Gemini first, fall back to Groq if quota exceeded
+    const geminiResponse = await fetchGemini();
+
+    if (geminiResponse.ok) {
+      const data = await geminiResponse.json();
+      content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    } else {
+      const errorText = await geminiResponse.text();
+      const isQuota = geminiResponse.status === 429 || errorText.includes("RESOURCE_EXHAUSTED") || errorText.includes("quota");
+      const isRetryable = isQuota || geminiResponse.status === 503;
+
+      if (isRetryable && process.env.GROQ_API_KEY) {
+        console.warn(`Gemini returned ${geminiResponse.status}, falling back to Groq...`);
+
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: "You are an expert consulting interview evaluator. Always respond with valid JSON only — no markdown, no code fences." },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0.7,
+            max_tokens: 4096,
+          }),
+        });
+
+        if (!groqResponse.ok) {
+          const groqError = await groqResponse.text();
+          console.error("Groq fallback also failed:", groqResponse.status, groqError);
+          return NextResponse.json(
+            { error: "Both AI providers are unavailable — please try again in a minute" },
+            { status: 503 }
+          );
+        }
+
+        const groqData = await groqResponse.json();
+        content = groqData.choices?.[0]?.message?.content || "";
+      } else {
+        console.error("Gemini API error:", geminiResponse.status, errorText);
+        return NextResponse.json(
+          {
+            error: isQuota
+              ? "API quota exceeded — please wait a minute and try again"
+              : `Evaluation API failed (status ${geminiResponse.status})`,
+          },
+          { status: isQuota ? 429 : 500 }
+        );
+      }
     }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error:", response.status, errorText);
-      const isQuota = response.status === 429 || errorText.includes("RESOURCE_EXHAUSTED") || errorText.includes("quota");
-      const isOverloaded = response.status === 503 || errorText.includes("UNAVAILABLE");
-      return NextResponse.json(
-        {
-          error: isQuota
-            ? "API quota exceeded — please wait a minute and try again"
-            : isOverloaded
-              ? "The AI model is temporarily overloaded — please try again in a moment"
-              : `Evaluation API failed (status ${response.status})`,
-        },
-        { status: isQuota ? 429 : isOverloaded ? 503 : 500 }
-      );
-    }
-
-    const data = await response.json();
-    let content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     // Strip markdown code fences that Gemini sometimes wraps around JSON
     content = stripMarkdownCodeFences(content);

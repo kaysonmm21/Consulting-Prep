@@ -48,6 +48,32 @@ export async function getSessions(): Promise<SessionResult[]> {
   }));
 }
 
+export async function getSessionById(id: string): Promise<SessionResult | null> {
+  const supabase = createBrowserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    caseId: data.case_id,
+    date: data.date,
+    transcript: data.transcript,
+    frameworkTime: data.framework_time,
+    presentationTime: data.presentation_time,
+    scores: data.scores,
+    feedback: data.feedback,
+    showedTranscript: data.showed_transcript,
+  };
+}
+
 export async function getStats() {
   const sessions = await getSessions();
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { cases } from "@/lib/cases";
 import { saveSession } from "@/lib/storage";
@@ -28,6 +28,8 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const [clarifyLoading, setClarifyLoading] = useState(false);
   const [processingError, setProcessingError] = useState("");
   const MAX_CLARIFYING_QUESTIONS = 5;
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   if (!caseData) {
     return (
@@ -165,7 +167,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           <div className="flex min-h-[300px] flex-col gap-3 overflow-y-auto rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
             {clarifyingChat.length === 0 && (
               <p className="my-auto text-center text-sm text-gray-300">
-                Type a question below to get started
+                Tap the mic or type a question to get started
               </p>
             )}
             {clarifyingChat.map((msg, i) => (
@@ -236,6 +238,63 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
             }}
             className="flex items-center gap-2"
           >
+            {/* Mic button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isListening) {
+                  recognitionRef.current?.stop();
+                  setIsListening(false);
+                  return;
+                }
+                const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                  alert("Speech recognition is not supported in this browser. Please use Chrome.");
+                  return;
+                }
+                const recognition = new SpeechRecognition();
+                recognitionRef.current = recognition;
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = "en-US";
+
+                recognition.onresult = (event: any) => {
+                  let finalTranscript = "";
+                  let interimTranscript = "";
+                  for (let i = 0; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                      finalTranscript += event.results[i][0].transcript;
+                    } else {
+                      interimTranscript += event.results[i][0].transcript;
+                    }
+                  }
+                  setClarifyInput(finalTranscript + interimTranscript);
+                };
+
+                recognition.onend = () => {
+                  setIsListening(false);
+                };
+
+                recognition.onerror = () => {
+                  setIsListening(false);
+                };
+
+                recognition.start();
+                setIsListening(true);
+              }}
+              disabled={clarifyLoading || clarifyingChat.length >= MAX_CLARIFYING_QUESTIONS}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors ${
+                isListening
+                  ? "bg-red-500 text-white animate-pulse"
+                  : "bg-[#F1F1F1] text-gray-600 hover:bg-[#E8E8E8]"
+              } disabled:bg-gray-200 disabled:text-gray-400`}
+              aria-label={isListening ? "Stop listening" : "Start voice input"}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M8.25 4.5a3.75 3.75 0 117.5 0v8.25a3.75 3.75 0 11-7.5 0V4.5z" />
+                <path d="M6 10.5a.75.75 0 01.75.75v1.5a5.25 5.25 0 1010.5 0v-1.5a.75.75 0 011.5 0v1.5a6.751 6.751 0 01-6 6.709v2.291h3a.75.75 0 010 1.5h-7.5a.75.75 0 010-1.5h3v-2.291a6.751 6.751 0 01-6-6.709v-1.5A.75.75 0 016 10.5z" />
+              </svg>
+            </button>
             <input
               type="text"
               value={clarifyInput}
@@ -243,10 +302,14 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
               placeholder={
                 clarifyingChat.length >= MAX_CLARIFYING_QUESTIONS
                   ? "You've used all your questions"
-                  : "Ask a clarifying question..."
+                  : isListening
+                  ? "Listening..."
+                  : "Tap mic or type a question..."
               }
               disabled={clarifyLoading || clarifyingChat.length >= MAX_CLARIFYING_QUESTIONS}
-              className="flex-1 rounded-full border border-gray-200 px-5 py-3 text-sm text-black placeholder-gray-400 outline-none transition-colors focus:border-[#00A651] disabled:bg-gray-50 disabled:text-gray-400"
+              className={`flex-1 rounded-full border px-5 py-3 text-sm text-black placeholder-gray-400 outline-none transition-colors focus:border-[#00A651] disabled:bg-gray-50 disabled:text-gray-400 ${
+                isListening ? "border-red-300 bg-red-50/30" : "border-gray-200"
+              }`}
             />
             <button
               type="submit"

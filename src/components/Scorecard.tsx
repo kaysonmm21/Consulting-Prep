@@ -20,13 +20,6 @@ function scoreColor(score: number) {
   return "#059669";
 }
 
-function overallScoreColor(score: number) {
-  if (score <= 40) return "#EF4444";
-  if (score <= 60) return "#F59E0B";
-  if (score <= 80) return "#10B981";
-  return "#059669";
-}
-
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -64,36 +57,6 @@ export default function Scorecard({
 
   return (
     <div className="flex flex-col gap-8 pb-12">
-      {/* Overall Score */}
-      <div className="flex flex-col items-center gap-4">
-        {(() => {
-          const overall100 = Math.round(
-            ((scores.mece + scores.caseFit + scores.prioritization + scores.depth +
-              scores.hypothesis + scores.clarifyingQuestions + scores.delivery + scores.fillerWords) / 8) * 20
-          );
-          return (
-            <div className="relative flex h-32 w-32 items-center justify-center">
-              <svg className="absolute h-full w-full -rotate-90" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="52" fill="none" stroke="#E8E8E8" strokeWidth="8" />
-                <circle
-                  cx="60" cy="60" r="52" fill="none"
-                  stroke={overallScoreColor(overall100)}
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(overall100 / 100) * 327} 327`}
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="text-center">
-                <span className="text-3xl font-bold text-black">{overall100}</span>
-                <span className="text-sm text-gray-500">/100</span>
-              </div>
-            </div>
-          );
-        })()}
-        <p className="max-w-lg text-center text-gray-500">{feedback.summary}</p>
-      </div>
-
       {/* Strength & Improvement */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-lg bg-green-50 p-4">
@@ -112,32 +75,27 @@ export default function Scorecard({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <ScoreBar label="MECE" score={scores.mece} comment={feedback.meceComment} />
           <ScoreBar label="Case Fit" score={scores.caseFit} comment={feedback.caseFitComment} />
-          <ScoreBar label="Prioritization" score={scores.prioritization} comment={feedback.prioritizationComment} />
+          <ScoreBar label="Hypothesis & Prioritization" score={scores.hypothesisAndPrioritization} comment={feedback.hypothesisAndPrioritizationComment} />
           <ScoreBar label="Depth" score={scores.depth} comment={feedback.depthComment} />
-          <ScoreBar label="Hypothesis" score={scores.hypothesis} comment={feedback.hypothesisComment} />
           <ScoreBar label="Clarifying Questions" score={scores.clarifyingQuestions} comment={feedback.clarifyingQuestionsComment} />
           <ScoreBar label="Delivery" score={scores.delivery} comment={feedback.deliveryComment} />
-          <ScoreBar label="Filler Words" score={scores.fillerWords} comment={`${feedback.fillerWordsComment} (Found ${feedback.fillerWordCount}: ${feedback.fillerWordList.slice(0, 5).join(", ")})`} />
         </div>
       </div>
 
-      {/* Suggested Framework */}
-      <div className="rounded-lg bg-[#F1F1F1] p-6">
-        <h3 className="mb-4 text-2xl font-bold text-black">Suggested Stronger Framework</h3>
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {feedback.suggestedFramework.buckets.map((bucket) => (
-            <div key={bucket.name} className="rounded-lg bg-white p-4">
-              <h4 className="mb-2 text-sm font-bold text-black">{bucket.name}</h4>
-              <ul className="space-y-1">
-                {bucket.subPoints.map((point) => (
-                  <li key={point} className="text-xs text-gray-500">• {point}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+      {/* Suggestions */}
+      {feedback.suggestions && feedback.suggestions.length > 0 && (
+        <div className="rounded-lg bg-[#F1F1F1] p-6">
+          <h3 className="mb-4 text-2xl font-bold text-black">How to Improve Your Framework</h3>
+          <ul className="space-y-3">
+            {feedback.suggestions.map((suggestion, i) => (
+              <li key={i} className="flex gap-3 text-sm text-black">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00A651] text-xs font-bold text-white">{i + 1}</span>
+                {suggestion}
+              </li>
+            ))}
+          </ul>
         </div>
-        <p className="text-sm text-gray-500">{feedback.suggestedFramework.explanation}</p>
-      </div>
+      )}
 
       {/* Transcript */}
       <div>

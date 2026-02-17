@@ -26,60 +26,28 @@ export default function AudioRecorder({ onComplete }: AudioRecorderProps) {
 
   const transcribeAudio = useCallback(async (audioBlob: Blob) => {
     setStatus("transcribing");
-    setTranscribeProgress("Loading Whisper model (first time may take ~30s)...");
+    setTranscribeProgress("Transcribing your presentation...");
 
     try {
-      const { pipeline } = await import("@huggingface/transformers");
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
 
-      setTranscribeProgress("Preparing audio...");
-
-      // Convert blob to audio data
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const audioContext = new OfflineAudioContext(1, 1, 16000);
-
-      // Decode the audio
-      let audioBuffer: AudioBuffer;
-      try {
-        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      } catch {
-        // If webm decode fails, try converting via a regular AudioContext
-        const tempCtx = new AudioContext({ sampleRate: 16000 });
-        audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
-        await tempCtx.close();
-      }
-
-      // Resample to 16kHz mono Float32Array
-      const offlineCtx = new OfflineAudioContext(1, Math.ceil(audioBuffer.duration * 16000), 16000);
-      const source = offlineCtx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(offlineCtx.destination);
-      source.start();
-      const resampled = await offlineCtx.startRendering();
-      const audioData = resampled.getChannelData(0);
-
-      setTranscribeProgress("Transcribing your presentation...");
-
-      const transcriber = await pipeline(
-        "automatic-speech-recognition",
-        "onnx-community/whisper-small.en",
-        {
-          dtype: "q8",
-          device: "wasm",
-        }
-      );
-
-      const result = await transcriber(audioData, {
-        chunk_length_s: 30,
-        stride_length_s: 5,
-        return_timestamps: false,
+      const res = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData,
       });
 
-      const text = Array.isArray(result) ? result[0].text : result.text;
-      onComplete(text.trim(), secondsRef.current);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Transcription failed");
+      }
+
+      const data = await res.json();
+      onComplete(data.transcript.trim(), secondsRef.current);
     } catch (err) {
       console.error("Transcription error:", err);
       setStatus("error");
-      setError(`Transcription failed: ${err instanceof Error ? err.message : "Unknown error"}. Try using Chrome for best compatibility.`);
+      setError(`Transcription failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }, [onComplete]);
 
