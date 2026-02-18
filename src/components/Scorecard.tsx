@@ -161,7 +161,7 @@ export default function Scorecard({
           <span aria-hidden="true">&rarr;</span>
         </button>
         <Link
-          href="/"
+          href="/dashboard"
           className="rounded-full border-2 border-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white"
         >
           Back to Dashboard
