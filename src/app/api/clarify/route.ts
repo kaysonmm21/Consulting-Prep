@@ -27,8 +27,8 @@ function normalizeQuestion(q: string): string {
 }
 
 export async function POST(request: NextRequest) {
-  if (!process.env.GROQ_API_KEY) {
-    return NextResponse.json({ error: "Groq API key not configured" }, { status: 500 });
+  if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: "No AI API key configured" }, { status: 500 });
   }
 
   try {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ answer: cached });
     }
 
-    // --- Step 3: Call Groq API ---
+    // --- Step 3: Build shared prompt context ---
     console.log(`[clarify] API call for "${question}"`);
 
     const previousQAContext =
@@ -95,47 +95,84 @@ ${casePrompt}
 ## Previous Questions in This Session
 ${previousQAContext}`;
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: question },
-        ],
-        temperature: 0.7,
-        max_tokens: 256,
-      }),
-    });
+    let answer: string | null = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Groq API error:", response.status, errorText);
-      const isQuota = response.status === 429;
-      const isOverloaded = response.status === 503;
-      return NextResponse.json(
-        {
-          error: isQuota
-            ? "API quota exceeded — please wait a minute and try again"
-            : isOverloaded
-              ? "The AI model is temporarily overloaded — please try again in a moment"
-              : `Clarify API failed (status ${response.status})`,
+    // --- Step 4: Try Groq ---
+    if (process.env.GROQ_API_KEY) {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
         },
-        { status: isQuota ? 429 : isOverloaded ? 503 : 500 }
-      );
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: question },
+          ],
+          temperature: 0.7,
+          max_tokens: 256,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        answer = data.choices?.[0]?.message?.content?.trim() || null;
+      } else {
+        const errorText = await response.text();
+        const isRetryable = response.status === 429 || response.status === 503;
+        console.warn(`Groq clarify failed (${response.status}): ${errorText}${isRetryable && process.env.GEMINI_API_KEY ? " — falling back to Gemini" : ""}`);
+
+        if (!isRetryable || !process.env.GEMINI_API_KEY) {
+          return NextResponse.json(
+            {
+              error: response.status === 429
+                ? "API quota exceeded — please wait a minute and try again"
+                : response.status === 503
+                  ? "The AI model is temporarily overloaded — please try again in a moment"
+                  : `Clarify API failed (status ${response.status})`,
+            },
+            { status: response.status }
+          );
+        }
+      }
     }
 
-    const data = await response.json();
-    const answer = data.choices?.[0]?.message?.content?.trim() || "I'm not sure how to answer that — let's move on.";
+    // --- Step 5: Fallback to Gemini ---
+    if (!answer && process.env.GEMINI_API_KEY) {
+      console.log("[clarify] Using Gemini fallback");
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\nCandidate question: ${question}` }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
+          }),
+        }
+      );
+
+      if (!geminiRes.ok) {
+        const geminiError = await geminiRes.text();
+        console.error("Gemini clarify fallback failed:", geminiRes.status, geminiError);
+        return NextResponse.json(
+          { error: "Both AI providers are unavailable — please try again in a moment" },
+          { status: 503 }
+        );
+      }
+
+      const geminiData = await geminiRes.json();
+      answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+    }
+
+    const finalAnswer = answer || "I'm not sure how to answer that — let's move on.";
 
     // Store in cache for future requests
-    answerCache.set(cacheKey, answer);
+    answerCache.set(cacheKey, finalAnswer);
 
-    return NextResponse.json({ answer });
+    return NextResponse.json({ answer: finalAnswer });
   } catch (err) {
     console.error("Clarify error:", err);
     const message =
