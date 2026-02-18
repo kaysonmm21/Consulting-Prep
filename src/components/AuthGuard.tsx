@@ -33,9 +33,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      if (!session?.user && !isPublic) {
+      // SIGNED_OUT: Navbar already handles the redirect to "/".
+      if (event !== "SIGNED_OUT" && !session?.user && !isPublic) {
         router.replace("/login");
       }
     });
