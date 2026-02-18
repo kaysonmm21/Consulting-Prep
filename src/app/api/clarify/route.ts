@@ -139,32 +139,62 @@ ${previousQAContext}`;
       }
     }
 
-    // --- Step 5: Fallback to Gemini ---
-    if (!answer && process.env.GEMINI_API_KEY) {
-      console.log("[clarify] Using Gemini fallback");
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    const clarifyPrompt = `${systemPrompt}\n\nCandidate question: ${question}`;
+
+    const tryGeminiClarify = async (model: string): Promise<string | null> => {
+      if (!process.env.GEMINI_API_KEY) return null;
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `${systemPrompt}\n\nCandidate question: ${question}` }] }],
+            contents: [{ parts: [{ text: clarifyPrompt }] }],
             generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
           }),
         }
       );
+      if (!res.ok) { console.warn(`[clarify] Gemini ${model} failed (${res.status})`); return null; }
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+    };
 
-      if (!geminiRes.ok) {
-        const geminiError = await geminiRes.text();
-        console.error("Gemini clarify fallback failed:", geminiRes.status, geminiError);
-        return NextResponse.json(
-          { error: "Both AI providers are unavailable — please try again in a moment" },
-          { status: 503 }
-        );
-      }
+    // --- Step 5: Gemini 2.0 Flash fallback ---
+    if (!answer) {
+      console.log("[clarify] Trying Gemini 2.0 Flash fallback");
+      answer = await tryGeminiClarify("gemini-2.0-flash");
+    }
 
-      const geminiData = await geminiRes.json();
-      answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+    // --- Step 6: Groq llama-3.1-8b-instant fallback ---
+    if (!answer && process.env.GROQ_API_KEY) {
+      console.log("[clarify] Trying Groq llama-3.1-8b-instant fallback");
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "system", content: systemPrompt }, { role: "user", content: question }],
+          temperature: 0.7,
+          max_tokens: 256,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        answer = data.choices?.[0]?.message?.content?.trim() || null;
+      } else console.warn(`[clarify] Groq 8b failed (${res.status})`);
+    }
+
+    // --- Step 7: Gemini 1.5 Flash last resort ---
+    if (!answer) {
+      console.log("[clarify] Trying Gemini 1.5 Flash last resort");
+      answer = await tryGeminiClarify("gemini-1.5-flash");
+    }
+
+    if (!answer) {
+      return NextResponse.json(
+        { error: "All AI providers are unavailable — please try again in a moment" },
+        { status: 503 }
+      );
     }
 
     const finalAnswer = answer || "I'm not sure how to answer that — let's move on.";

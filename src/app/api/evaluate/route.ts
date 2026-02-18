@@ -102,59 +102,80 @@ Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
 
     let content = "";
 
-    // Try Gemini first, fall back to Groq if quota exceeded
-    const geminiResponse = await fetchGemini();
+    const groqSystemMsg = "You are an expert consulting interview evaluator. Always respond with valid JSON only — no markdown, no code fences.";
 
-    if (geminiResponse.ok) {
-      const data = await geminiResponse.json();
-      content = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    } else {
-      const errorText = await geminiResponse.text();
-      const isQuota = geminiResponse.status === 429 || errorText.includes("RESOURCE_EXHAUSTED") || errorText.includes("quota");
-      const isRetryable = isQuota || geminiResponse.status === 503;
-
-      if (isRetryable && process.env.GROQ_API_KEY) {
-        console.warn(`Gemini returned ${geminiResponse.status}, falling back to Groq...`);
-
-        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: "You are an expert consulting interview evaluator. Always respond with valid JSON only — no markdown, no code fences." },
-              { role: "user", content: prompt },
-            ],
-            temperature: 0.7,
-            max_tokens: 4096,
-          }),
-        });
-
-        if (!groqResponse.ok) {
-          const groqError = await groqResponse.text();
-          console.error("Groq fallback also failed:", groqResponse.status, groqError);
-          return NextResponse.json(
-            { error: "Both AI providers are unavailable — please try again in a minute" },
-            { status: 503 }
-          );
-        }
-
-        const groqData = await groqResponse.json();
-        content = groqData.choices?.[0]?.message?.content || "";
-      } else {
-        console.error("Gemini API error:", geminiResponse.status, errorText);
-        return NextResponse.json(
-          {
-            error: isQuota
-              ? "API quota exceeded — please wait a minute and try again"
-              : `Evaluation API failed (status ${geminiResponse.status})`,
-          },
-          { status: isQuota ? 429 : 500 }
-        );
+    const tryGroq = async (model: string): Promise<string | null> => {
+      if (!process.env.GROQ_API_KEY) return null;
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: groqSystemMsg },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 4096,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        const retryable = res.status === 429 || res.status === 503;
+        console.warn(`Groq ${model} failed (${res.status}): ${err}`);
+        return retryable ? null : "HARD_FAIL";
       }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || null;
+    };
+
+    const tryGemini = async (model: string): Promise<string | null> => {
+      if (!process.env.GEMINI_API_KEY) return null;
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 4096, responseMimeType: "application/json" },
+          }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.text();
+        console.warn(`Gemini ${model} failed (${res.status}): ${err}`);
+        return null;
+      }
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    };
+
+    // Cascade: gemini-2.0-flash → groq 70b → groq 8b → gemini-1.5-flash
+    content = (await tryGemini("gemini-2.0-flash")) ?? "";
+
+    if (!content) {
+      console.warn("gemini-2.0-flash failed, trying groq llama-3.3-70b...");
+      const r = await tryGroq("llama-3.3-70b-versatile");
+      if (r && r !== "HARD_FAIL") content = r;
+    }
+
+    if (!content) {
+      console.warn("groq 70b failed, trying groq llama-3.1-8b-instant...");
+      const r = await tryGroq("llama-3.1-8b-instant");
+      if (r && r !== "HARD_FAIL") content = r;
+    }
+
+    if (!content) {
+      console.warn("groq 8b failed, trying gemini-1.5-flash...");
+      content = (await tryGemini("gemini-1.5-flash")) ?? "";
+    }
+
+    if (!content) {
+      return NextResponse.json(
+        { error: "All AI providers are unavailable — please try again in a minute" },
+        { status: 503 }
+      );
     }
 
     // Strip markdown code fences that Gemini sometimes wraps around JSON

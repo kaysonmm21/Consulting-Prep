@@ -13,42 +13,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
     }
 
-    // ── Primary: Groq Whisper ────────────────────────────────────────────────
-    if (process.env.GROQ_API_KEY) {
-      const groqForm = new FormData();
-      groqForm.append("file", audioFile);
-      groqForm.append("model", "whisper-large-v3-turbo");
-      groqForm.append("response_format", "json");
-      groqForm.append("language", "en");
-
-      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    const tryGroqWhisper = async (model: string): Promise<string | null> => {
+      if (!process.env.GROQ_API_KEY) return null;
+      const form = new FormData();
+      form.append("file", audioFile);
+      form.append("model", model);
+      form.append("response_format", "json");
+      form.append("language", "en");
+      const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-        body: groqForm,
+        body: form,
       });
+      if (res.ok) { const data = await res.json(); return data.text ?? null; }
+      const err = await res.text();
+      const retryable = res.status === 429 || res.status === 503;
+      console.warn(`Groq ${model} failed (${res.status}): ${err}`);
+      return retryable ? null : "HARD_FAIL";
+    };
 
-      if (response.ok) {
-        const data = await response.json();
-        return NextResponse.json({ transcript: data.text });
-      }
-
-      const errorText = await response.text();
-      const isRetryable = response.status === 429 || response.status === 503;
-      console.warn(`Groq Whisper failed (${response.status}): ${errorText}${isRetryable && process.env.GEMINI_API_KEY ? " — falling back to Gemini" : ""}`);
-
-      if (!isRetryable || !process.env.GEMINI_API_KEY) {
-        return NextResponse.json(
-          { error: response.status === 429 ? "API quota exceeded — please wait and try again" : "Transcription failed" },
-          { status: response.status }
-        );
-      }
+    // ── 1. Groq whisper-large-v3-turbo ───────────────────────────────────────
+    const turboResult = await tryGroqWhisper("whisper-large-v3-turbo");
+    if (turboResult && turboResult !== "HARD_FAIL") {
+      return NextResponse.json({ transcript: turboResult });
+    }
+    if (turboResult === "HARD_FAIL") {
+      return NextResponse.json({ error: "Transcription failed" }, { status: 500 });
     }
 
-    // ── Fallback: Gemini audio transcription ─────────────────────────────────
+    // ── 2. Groq whisper-large-v3 (fallback model) ────────────────────────────
+    console.log("[transcribe] Trying whisper-large-v3...");
+    const v3Result = await tryGroqWhisper("whisper-large-v3");
+    if (v3Result && v3Result !== "HARD_FAIL") {
+      return NextResponse.json({ transcript: v3Result });
+    }
+
+    // ── 3. Gemini audio transcription ────────────────────────────────────────
     console.log("[transcribe] Using Gemini fallback");
     const audioBuffer = await audioFile.arrayBuffer();
     const audioBase64 = Buffer.from(audioBuffer).toString("base64");
-    const mimeType = audioFile.type || "audio/webm";
+    // Strip codec suffix (e.g. "audio/webm;codecs=opus" → "audio/webm")
+    const mimeType = (audioFile.type || "audio/webm").split(";")[0];
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
