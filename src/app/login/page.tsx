@@ -13,22 +13,51 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setMessage("");
     setLoading(true);
 
     try {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage("Check your email for a confirmation link.");
+
+        // Check waitlist approval before granting access.
+        const res = await fetch("/api/check-approved", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const { approved } = await res.json();
+
+        if (!approved) {
+          await supabase.auth.signOut();
+          setError("Your account is pending approval. We'll email you when access is ready.");
+          return;
+        }
+
+        router.push("/dashboard");
+        router.refresh();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        // Check waitlist approval before granting access.
+        const res = await fetch("/api/check-approved", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const { approved } = await res.json();
+
+        if (!approved) {
+          await supabase.auth.signOut();
+          setError("Your account is pending approval. We'll email you when access is ready.");
+          return;
+        }
+
         router.push("/dashboard");
         router.refresh();
       }
@@ -85,9 +114,6 @@ export default function LoginPage() {
           {error && (
             <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>
           )}
-          {message && (
-            <p className="rounded-lg bg-green-50 p-3 text-sm text-green-600">{message}</p>
-          )}
 
           <button
             type="submit"
@@ -104,7 +130,6 @@ export default function LoginPage() {
             onClick={() => {
               setIsSignUp(!isSignUp);
               setError("");
-              setMessage("");
             }}
             className="font-semibold text-[#00A651] hover:underline"
           >

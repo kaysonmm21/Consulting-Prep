@@ -102,13 +102,13 @@ export default function LandingPage() {
   const overallPct = Math.round(MOCK_SCORES.overall * 20);
 
   return (
-    <div className="flex flex-col gap-20 pb-24">
+    <div className="flex flex-col gap-12 pb-24 sm:gap-20">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center gap-6 py-20 text-center">
+      <div className="flex flex-col items-center gap-6 py-12 text-center sm:py-20">
         <span className="inline-flex items-center rounded-full border border-[#00A651]/30 bg-green-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#00A651]">
           Early Access — Limited Spots
         </span>
-        <h1 className="max-w-3xl text-5xl font-bold leading-tight text-black sm:text-6xl">
+        <h1 className="max-w-3xl text-3xl font-bold leading-tight text-black sm:text-5xl lg:text-6xl">
           The AI Coach Built to Get You Into{" "}
           <span className="text-[#00A651]">Top Consulting</span>
         </h1>
@@ -165,15 +165,15 @@ export default function LandingPage() {
             should enter China, and if so, what their strategy should be...
           </p>
           <p className="mt-4 text-xs font-semibold text-[#00A651]">
-            After reading the case you&apos;d ask clarifying questions, build your framework, then record your presentation out loud &rarr;
+            After reading the case you&apos;d ask clarifying questions, build your framework, then present your framework out loud &rarr;
           </p>
         </div>
 
         {/* Scorecard preview */}
         <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-black">Your AI Scorecard</h3>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-lg font-bold text-black sm:text-xl">Your Framework AI Scorecard</h3>
             <div className="text-right">
               <p className="text-3xl font-bold text-[#10B981]">{overallPct}/100</p>
               <p className="text-xs text-gray-400">Overall Score</p>
@@ -258,11 +258,11 @@ export default function LandingPage() {
             },
             {
               title: "AI-Powered Scoring",
-              body: "Powered by Gemini. Every framework scored across 7 dimensions: MECE, Case Fit, Hypothesis, Depth, Clarifying Questions, and Delivery.",
+              body: "Every framework scored across 7 dimensions: MECE, Case Fit, Hypothesis, Depth, Clarifying Questions, and Delivery.",
             },
             {
-              title: "Real Consulting Cases",
-              body: "6 cases across profitability, market entry, M&A, pricing, and operations — built to match the structure of McKinsey and BCG interviews.",
+              title: "Realistic Consulting Cases",
+              body: "Cases across profitability, market entry, M&A, pricing, and operations — built to match the structure of McKinsey and BCG interviews.",
             },
             {
               title: "Interactive Clarifying Q&A",
@@ -291,7 +291,7 @@ export default function LandingPage() {
       </div>
 
       {/* ── Who it's for ──────────────────────────────────────────────────── */}
-      <div className="rounded-xl bg-[#F1F1F1] p-10 text-center">
+      <div className="rounded-xl bg-[#F1F1F1] p-6 text-center sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
           Built For
         </p>
@@ -323,7 +323,7 @@ export default function LandingPage() {
             <span className="inline-flex items-center rounded-full border border-[#00A651]/30 bg-green-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#00A651]">
               Early Access
             </span>
-            <h2 className="text-4xl font-bold text-black">Join the waitlist</h2>
+            <h2 className="text-3xl font-bold text-black sm:text-4xl">Join the waitlist</h2>
             <p className="max-w-md text-base text-gray-500">
               We&apos;re opening access in small batches. The first 10 people get free
               access for life — drop your email to get in line.
@@ -379,7 +379,6 @@ export default function LandingPage() {
                 )}
               </p>
             )}
-            <p className="text-sm text-gray-400">We&apos;ll reach out to {email}.</p>
           </div>
         )}
       </div>

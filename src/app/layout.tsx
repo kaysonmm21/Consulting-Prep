@@ -27,11 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} overflow-x-hidden antialiased`}
       >
         <AuthGuard>
           <Navbar />
-          <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+          <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</main>
         </AuthGuard>
       </body>
     </html>

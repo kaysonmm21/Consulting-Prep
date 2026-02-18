@@ -41,7 +41,7 @@ export default function Navbar() {
           <span className="text-xl font-bold uppercase tracking-wider text-[#00A651]">Coach</span>
         </Link>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4 sm:gap-8">
           {isLanding && !user ? (
             // Landing page — unauthenticated: just a sign-in link.
             <Link
@@ -75,7 +75,7 @@ export default function Navbar() {
               </Link>
               {user && (
                 <>
-                  <span className="text-xs text-gray-500">{user.email}</span>
+                  <span className="hidden text-xs text-gray-500 sm:inline">{user.email}</span>
                   <button
                     onClick={handleSignOut}
                     className="text-xs font-semibold uppercase tracking-widest text-gray-500 transition-colors hover:text-black"
