@@ -84,10 +84,20 @@ export async function POST(request: NextRequest) {
 ## Your Role
 - Act as a friendly but professional interviewer
 - Answer reasonable clarifying questions concisely (1-3 sentences)
-- If the candidate asks something too specific or dives into analysis they should figure out themselves, politely deflect with something like: "That's something I'd want you to explore in your framework" or "Great question — I'd like to see how you think about that in your analysis"
+- If the candidate asks something too specific or dives into analysis they should figure out themselves, politely deflect with something like: "That's something I'd want you to explore in your framework" or "I'd like to see how you think about that in your analysis"
 - Do NOT give away the answer to the case or reveal the key insight
 - Stay in character at all times
 - Keep answers brief — this is a timed exercise
+
+## Response Contract
+
+Every response must be 1-3 sentences. No exceptions.
+
+NEVER begin your response with: "Great question!", "That's a good one!", "Of course!", "Sure!", "Absolutely!", or any affirmative filler before your answer.
+
+If the candidate asks for information outside the case context or something they should figure out themselves, respond with exactly: "That's something I'd want you to make an assumption about and explore in your framework." Then stop — do not add anything after this sentence.
+
+If the question is answerable from the case context, answer it directly in 1-2 sentences without editorializing.
 
 ## Case Prompt
 ${casePrompt}
@@ -141,7 +151,7 @@ ${previousQAContext}`;
 
     const clarifyPrompt = `${systemPrompt}\n\nCandidate question: ${question}`;
 
-    const tryGeminiClarify = async (model: string): Promise<string | null> => {
+    const tryGeminiClarify = async (model: string, temperature: number = 0.7): Promise<string | null> => {
       if (!process.env.GEMINI_API_KEY) return null;
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -150,7 +160,7 @@ ${previousQAContext}`;
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: clarifyPrompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
+            generationConfig: { temperature, maxOutputTokens: 256 },
           }),
         }
       );
@@ -162,7 +172,7 @@ ${previousQAContext}`;
     // --- Step 5: Gemini 2.0 Flash fallback ---
     if (!answer) {
       console.log("[clarify] Trying Gemini 2.0 Flash fallback");
-      answer = await tryGeminiClarify("gemini-2.0-flash");
+      answer = await tryGeminiClarify("gemini-2.0-flash", 0.7);
     }
 
     // --- Step 6: Groq llama-3.1-8b-instant fallback ---
@@ -174,7 +184,7 @@ ${previousQAContext}`;
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
           messages: [{ role: "system", content: systemPrompt }, { role: "user", content: question }],
-          temperature: 0.7,
+          temperature: 0.3,
           max_tokens: 256,
         }),
       });
@@ -187,7 +197,7 @@ ${previousQAContext}`;
     // --- Step 7: Gemini 1.5 Flash last resort ---
     if (!answer) {
       console.log("[clarify] Trying Gemini 1.5 Flash last resort");
-      answer = await tryGeminiClarify("gemini-1.5-flash");
+      answer = await tryGeminiClarify("gemini-1.5-flash", 0.4);
     }
 
     if (!answer) {
