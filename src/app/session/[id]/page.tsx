@@ -63,6 +63,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
         frameworkTime={session.frameworkTime}
         presentationTime={session.presentationTime}
         transcript={session.transcript}
+        casePrompt={caseData?.prompt}
         onPracticeAgain={() => router.push("/practice")}
       />
     </div>

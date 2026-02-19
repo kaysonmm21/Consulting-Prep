@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { cases } from "@/lib/cases";
 
+
 const categories = ["all", "profitability", "market-entry", "ma", "pricing", "operations"] as const;
 const categoryLabels: Record<string, string> = {
   all: "All",
@@ -37,6 +38,24 @@ export default function PracticePage() {
         <h1 className="text-4xl font-bold text-black sm:text-5xl">Select a Case</h1>
         <p className="mt-2 text-gray-500">Choose a case to practice your framework skills</p>
       </div>
+
+      {/* Learn banner */}
+      <Link
+        href="/learn"
+        className="rounded-lg bg-[#F1F1F1] p-4 flex items-center justify-between hover:bg-[#E8E8E8] transition-colors"
+      >
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+            New to cases?
+          </p>
+          <p className="text-sm font-bold text-black">
+            Get Up to Speed on Case Frameworks
+          </p>
+        </div>
+        <span className="text-xs font-semibold text-[#00A651]">
+          Learn the basics →
+        </span>
+      </Link>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-6">

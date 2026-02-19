@@ -383,6 +383,7 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           frameworkTime={frameworkTime}
           presentationTime={presentationTime}
           transcript={transcript}
+          casePrompt={caseData.prompt}
           onPracticeAgain={() => router.push("/practice")}
         />
       )}

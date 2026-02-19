@@ -63,6 +63,16 @@ export default function Navbar() {
                 Practice
               </Link>
               <Link
+                href="/learn"
+                className={`text-xs font-semibold uppercase tracking-widest transition-colors ${
+                  pathname?.startsWith("/learn")
+                    ? "border-b-2 border-[#00A651] pb-0.5 text-black"
+                    : "text-black hover:border-b-2 hover:border-black hover:pb-0.5"
+                }`}
+              >
+                Learn
+              </Link>
+              <Link
                 href="/dashboard"
                 className={`text-xs font-semibold uppercase tracking-widest transition-colors ${
                   pathname === "/dashboard"
