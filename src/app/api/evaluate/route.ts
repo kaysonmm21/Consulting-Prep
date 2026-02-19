@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
       clarifyingQuestionsViewed,
       clarifyingQuestionsAsked,
       totalClarifyingQuestions,
+      previousAttempt,
     } = body;
 
     const prompt = `You are an expert consulting interview evaluator from McKinsey, BCG, or Bain. Your feedback is direct, calibrated, and specific to the candidate's actual words. You never give vague or generic feedback.
@@ -125,6 +126,23 @@ Context: SaaS company with flat-fee pricing, growth stalled. Candidate said: "My
 
 {"scores":{"overall":2.2,"mece":2,"caseFit":1,"hypothesisAndPrioritization":1,"depth":2,"clarifyingQuestions":1,"delivery":3},"feedback":{"meceComment":"Your 'Strategy' bucket overlaps with both Revenue and Costs since any strategic recommendation would draw from both analyses. Rename it to 'Transition Plan' and scope it specifically to customer migration, rollout timeline, and communication.","caseFitComment":"All three bucket names — Revenue, Costs, Strategy — could describe any business without changing a single word. Rename Revenue to 'Pricing Model Analysis' and add a bucket called 'Customer Segment Economics' to reflect the core pricing problem in this case.","hypothesisAndPrioritizationComment":"No hypothesis was stated and no area was identified as the starting point before listing buckets. Open with: 'My hypothesis is that flat-fee pricing is undercharging large customers and pricing out small ones, so I'd start with segment-level unit economics.'","depthComment":"Each bucket has at most one sub-point and none are actionable analysis questions. Under Revenue, add: revenue per customer by company size, churn rate by segment, and willingness-to-pay data — these turn a vague bucket into a real workstream.","clarifyingQuestionsComment":"You asked no questions despite five being available, missing critical unknowns like churn rate and competitive pricing that would directly shape your framework. Ask at least two targeted questions before building any pricing framework.","deliveryComment":"You signposted all three buckets clearly and moved top-down throughout the presentation. Add a one-sentence synthesis at the end to tie the buckets together before diving in.","suggestions":[{"title":"Add a fourth bucket called 'Customer Segment Economics' to address the core pricing problem.","detail":"The case is specifically about whether different customer segments should pay different amounts, but your framework has no bucket dedicated to analyzing those segments. This directly raises your Case Fit score — say: 'My third bucket is Customer Segment Economics: revenue per seat by company size, cost-to-serve by segment, and churn drivers by segment.'"},{"title":"Rename 'Strategy' to 'Transition Plan' and scope it to customer migration only.","detail":"The current name overlaps with everything else in your framework since all analysis leads to strategy. Scoping it to the transition — grandfathering policy, rollout timeline, and communication — makes it MECE; say: 'My final bucket is the transition plan: how do we move existing customers without losing them?'"},{"title":"Add three sub-points under Revenue: revenue by segment, churn by segment, and price sensitivity.","detail":"Right now Revenue only has 'pricing model' as a sub-point, which is too vague to drive real analysis. Each sub-point should be a question your team can go answer with data — these three turn a vague label into a concrete workstream and raise your Depth score."},{"title":"State your hypothesis in the first sentence before listing any buckets.","detail":"You went straight to listing buckets without telling the interviewer where you think the answer lies. Open with: 'My hypothesis is that the flat fee is creating two problems — it's too expensive for small teams and too cheap for large ones — so I'll structure my analysis around diagnosing and solving both.'"},{"title":"Ask about churn rate and competitive pricing before building your framework.","detail":"The case says growth is stalled but doesn't say why — a 3% monthly churn rate versus 0.5% would lead to completely different frameworks. These two questions take 30 seconds and would materially change your structure; skipping them signals you build frameworks before you understand the problem."}],"topStrength":"Your delivery was clear and professional — you signposted all three buckets upfront and moved through them in a logical order.","topImprovement":"Your framework has no case-specific language — every bucket name and sub-point could describe a generic business problem rather than a pricing model redesign for a SaaS company."}}
 
+${previousAttempt ? `
+## Retry Attempt — Previous Session Context
+
+This is the candidate's second attempt on the same case. Their previous overall score was ${previousAttempt.scores.overall}/5.
+
+Previous top strength: "${previousAttempt.feedback.topStrength}"
+Previous top improvement: "${previousAttempt.feedback.topImprovement}"
+Suggestions they received last time:
+${previousAttempt.feedback.suggestions.map((s: { title: string }, i: number) => `${i + 1}. ${s.title}`).join("\n")}
+
+Scoring instructions for this retry:
+- Score this attempt fully on its own merits — do not inflate scores because it is a second attempt.
+- Where the candidate has clearly addressed a previous suggestion, note the improvement explicitly in that dimension's comment: "Compared to your first attempt, [specific observation]."
+- Where they ignored a key piece of feedback or regressed on a previous strength, name it directly.
+- Your topStrength and topImprovement must reflect what is true of this attempt specifically — do not copy from the previous session.
+- Do not give the same feedback twice. This is a new recording, a new evaluation.
+` : ""}
 Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
 {
   "scores": {

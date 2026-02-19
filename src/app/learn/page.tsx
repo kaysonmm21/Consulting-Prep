@@ -67,20 +67,20 @@ const DIMENSIONS = [
 const RESOURCES = [
   {
     type: "YouTube",
-    source: "IGotAnOffer",
-    title: "Case Interview Framework — Full Walkthrough",
+    source: "YouTube",
+    title: "Case Interview Frameworks — Full Walkthrough",
     description:
-      "End-to-end walkthrough of how to build a strong framework from scratch, used by hundreds of thousands of candidates.",
-    url: "https://www.youtube.com/watch?v=i9FDoJJT9sU",
+      "A complete walkthrough of how to build and present a strong case framework from scratch.",
+    url: "https://www.youtube.com/watch?v=I1x0HvIO2d4&t=83s",
     cta: "Watch →",
   },
   {
     type: "YouTube",
-    source: "My Consulting Offer",
-    title: "MECE Principle Explained",
+    source: "IGotAnOffer",
+    title: "Case Interview Framework — Step by Step",
     description:
-      "Clear explanation of MECE with before/after examples showing the difference between a weak and strong framework structure.",
-    url: "https://www.youtube.com/watch?v=VXs_T6FFQT8",
+      "End-to-end framework tutorial used by hundreds of thousands of candidates preparing for MBB interviews.",
+    url: "https://www.youtube.com/watch?v=i9FDoJJT9sU",
     cta: "Watch →",
   },
   {

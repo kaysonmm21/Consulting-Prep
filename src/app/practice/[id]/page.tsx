@@ -9,7 +9,7 @@ import Stopwatch from "@/components/Stopwatch";
 import AudioRecorder from "@/components/AudioRecorder";
 import Scorecard from "@/components/Scorecard";
 
-type Phase = "listening" | "clarifying" | "building" | "presenting" | "processing" | "results";
+type Phase = "listening" | "clarifying" | "building" | "presenting" | "processing" | "results" | "retry-brief";
 
 export default function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -30,6 +30,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
   const MAX_CLARIFYING_QUESTIONS = 5;
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const [previousScores, setPreviousScores] = useState<EvaluationScores | null>(null);
+  const [previousFeedback, setPreviousFeedback] = useState<EvaluationFeedback | null>(null);
+  const [briefExpanded, setBriefExpanded] = useState(true);
 
   if (!caseData) {
     return (
@@ -38,6 +41,21 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
       </div>
     );
   }
+
+  const handleRetryWithFeedback = () => {
+    setPreviousScores(scores);
+    setPreviousFeedback(feedback);
+    setScores(null);
+    setFeedback(null);
+    setTranscript("");
+    setFrameworkTime(0);
+    setPresentationTime(0);
+    setClarifyingChat([]);
+    setClarifyInput("");
+    setProcessingError("");
+    setBriefExpanded(true);
+    setPhase("retry-brief");
+  };
 
   const handleTranscribeAndEvaluate = async (text: string, duration: number) => {
     setPresentationTime(duration);
@@ -58,6 +76,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           showedTranscript,
           clarifyingQuestionsAsked: clarifyingChat,
           totalClarifyingQuestions: MAX_CLARIFYING_QUESTIONS,
+          ...(previousScores && previousFeedback
+            ? { previousAttempt: { scores: previousScores, feedback: previousFeedback } }
+            : {}),
         }),
       });
       if (!evaluateRes.ok) {
@@ -151,9 +172,113 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
         </div>
       )}
 
+      {/* Phase: Retry Brief */}
+      {phase === "retry-brief" && previousFeedback && previousScores && (
+        <div className="mx-auto flex max-w-2xl flex-col gap-6 py-8">
+          {/* Header */}
+          <div className="text-center">
+            <span className="inline-flex items-center rounded-full border border-[#00A651]/30 bg-green-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#00A651]">
+              Round 2
+            </span>
+            <h2 className="mt-3 text-3xl font-bold text-black">Retry with Feedback</h2>
+            <p className="mt-2 text-sm text-gray-500">
+              Same case. New attempt. Incorporate your coaching below.
+            </p>
+          </div>
+
+          {/* Previous score */}
+          <div className="flex items-center justify-center gap-4 rounded-xl bg-[#F1F1F1] px-6 py-4">
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Previous Score</p>
+              <p className="text-3xl font-bold text-black">{Math.round(previousScores.overall * 20)}<span className="text-lg text-gray-400">/100</span></p>
+            </div>
+            <div className="h-10 w-px bg-gray-300" />
+            <div className="flex-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">Top Improvement</p>
+              <p className="text-sm text-black leading-relaxed">{previousFeedback.topImprovement}</p>
+            </div>
+          </div>
+
+          {/* Suggestions to incorporate */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-amber-700">
+              Feedback to Incorporate This Round
+            </p>
+            <div className="flex flex-col gap-2">
+              {previousFeedback.suggestions.map((s, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-800">
+                    {i + 1}
+                  </span>
+                  <p className="text-sm text-amber-900 leading-relaxed">
+                    {typeof s === "object" ? s.title : s}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dimension scores for reference */}
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {(
+              [
+                ["MECE", previousScores.mece],
+                ["Case Fit", previousScores.caseFit],
+                ["Hypothesis", previousScores.hypothesisAndPrioritization],
+                ["Depth", previousScores.depth],
+                ["Questions", previousScores.clarifyingQuestions],
+                ["Delivery", previousScores.delivery],
+              ] as [string, number][]
+            ).map(([label, score]) => {
+              const color = score <= 2 ? "text-red-600" : score <= 3 ? "text-amber-600" : "text-emerald-600";
+              return (
+                <div key={label} className="rounded-lg bg-[#F1F1F1] p-3 text-center">
+                  <p className="text-xs text-gray-400 truncate">{label}</p>
+                  <p className={`text-base font-bold ${color}`}>{score}/5</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => setPhase("clarifying")}
+              className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-10 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
+            >
+              Start Round 2
+              <span aria-hidden="true">&rarr;</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Phase: Clarifying Questions — Interactive Chat */}
       {phase === "clarifying" && (
         <div className="mx-auto flex max-w-2xl flex-col gap-6 py-8">
+          {/* Coaching brief banner (retry mode) */}
+          {previousFeedback && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+              <button
+                onClick={() => setBriefExpanded((v) => !v)}
+                className="flex w-full items-center justify-between px-4 py-3 text-left"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                  Previous Coaching — Round 1 Feedback
+                </span>
+                <span className="text-xs text-amber-600">{briefExpanded ? "▲ Hide" : "▼ Show"}</span>
+              </button>
+              {briefExpanded && (
+                <div className="border-t border-amber-200 px-4 pb-4 pt-3 flex flex-col gap-2">
+                  <p className="text-xs font-semibold text-amber-800">{previousFeedback.topImprovement}</p>
+                  {previousFeedback.suggestions.slice(0, 3).map((s, i) => (
+                    <p key={i} className="text-xs text-amber-700 leading-relaxed">
+                      {i + 1}. {typeof s === "object" ? s.title : s}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <div className="text-center">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-500">
               Clarifying Questions
@@ -339,12 +464,38 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
 
       {/* Phase: Building */}
       {phase === "building" && (
-        <Stopwatch
-          onComplete={(elapsed) => {
-            setFrameworkTime(elapsed);
-            setPhase("presenting");
-          }}
-        />
+        <div className="flex flex-col gap-4">
+          {/* Coaching brief banner (retry mode) */}
+          {previousFeedback && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+              <button
+                onClick={() => setBriefExpanded((v) => !v)}
+                className="flex w-full items-center justify-between px-4 py-3 text-left"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                  Previous Coaching — incorporate this now
+                </span>
+                <span className="text-xs text-amber-600">{briefExpanded ? "▲ Hide" : "▼ Show"}</span>
+              </button>
+              {briefExpanded && (
+                <div className="border-t border-amber-200 px-4 pb-4 pt-3 flex flex-col gap-2">
+                  <p className="text-xs font-semibold text-amber-800">{previousFeedback.topImprovement}</p>
+                  {previousFeedback.suggestions.map((s, i) => (
+                    <p key={i} className="text-xs text-amber-700 leading-relaxed">
+                      {i + 1}. {typeof s === "object" ? s.title : s}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <Stopwatch
+            onComplete={(elapsed) => {
+              setFrameworkTime(elapsed);
+              setPhase("presenting");
+            }}
+          />
+        </div>
       )}
 
       {/* Phase: Presenting */}
@@ -384,7 +535,9 @@ export default function SessionPage({ params }: { params: Promise<{ id: string }
           presentationTime={presentationTime}
           transcript={transcript}
           casePrompt={caseData.prompt}
+          previousScores={previousScores ?? undefined}
           onPracticeAgain={() => router.push("/practice")}
+          onRetryWithFeedback={handleRetryWithFeedback}
         />
       )}
     </div>

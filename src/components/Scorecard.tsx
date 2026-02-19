@@ -11,7 +11,9 @@ interface ScorecardProps {
   presentationTime: number;
   transcript: string;
   casePrompt?: string;
+  previousScores?: EvaluationScores;
   onPracticeAgain: () => void;
+  onRetryWithFeedback?: () => void;
 }
 
 function scoreColor(score: number) {
@@ -33,14 +35,17 @@ function ScoreBar({
   comment,
   onClick,
   active,
+  previousScore,
 }: {
   label: string;
   score: number;
   comment: string;
   onClick?: () => void;
   active?: boolean;
+  previousScore?: number;
 }) {
   const color = scoreColor(score);
+  const delta = previousScore !== undefined ? score - previousScore : null;
   return (
     <div
       className={`rounded-lg p-4 transition-colors ${
@@ -57,6 +62,15 @@ function ScoreBar({
           {onClick && (
             <span className="text-xs font-medium text-[#00A651]">
               {active ? "▲ Hide" : "Practice →"}
+            </span>
+          )}
+          {delta !== null && (
+            <span
+              className={`text-xs font-bold ${
+                delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-500" : "text-gray-400"
+              }`}
+            >
+              {delta > 0 ? `+${delta}` : delta === 0 ? "—" : delta}
             </span>
           )}
           <span className="text-sm font-bold" style={{ color }}>{score}/5</span>
@@ -376,7 +390,9 @@ export default function Scorecard({
   presentationTime,
   transcript,
   casePrompt,
+  previousScores,
   onPracticeAgain,
+  onRetryWithFeedback,
 }: ScorecardProps) {
   const [showTranscript, setShowTranscript] = useState(false);
   const [drillOpen, setDrillOpen] = useState(false);
@@ -384,8 +400,46 @@ export default function Scorecard({
   const hypothesisClickable =
     scores.hypothesisAndPrioritization <= 3 && !!casePrompt;
 
+  const overallDelta =
+    previousScores !== undefined
+      ? Math.round((scores.overall - previousScores.overall) * 10) / 10
+      : null;
+
   return (
     <div className="flex flex-col gap-8 pb-12">
+      {/* Overall score header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Overall Score</p>
+          <div className="mt-1 flex items-end gap-3">
+            <span className="text-5xl font-bold text-black">{Math.round(scores.overall * 20)}</span>
+            <span className="mb-1 text-lg text-gray-400">/100</span>
+            {overallDelta !== null && (
+              <span
+                className={`mb-1 rounded-full px-2.5 py-0.5 text-sm font-bold ${
+                  overallDelta > 0
+                    ? "bg-emerald-50 text-emerald-600"
+                    : overallDelta < 0
+                    ? "bg-red-50 text-red-500"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {overallDelta > 0 ? `+${Math.round(overallDelta * 20)}` : overallDelta === 0 ? "No change" : Math.round(overallDelta * 20)} from last attempt
+              </span>
+            )}
+          </div>
+        </div>
+        {onRetryWithFeedback && (
+          <button
+            onClick={onRetryWithFeedback}
+            className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
+          >
+            Retry with Feedback
+            <span aria-hidden="true">&rarr;</span>
+          </button>
+        )}
+      </div>
+
       {/* Strength & Improvement */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-lg bg-green-50 p-4">
@@ -412,10 +466,25 @@ export default function Scorecard({
 
       {/* Score Breakdown */}
       <div>
-        <h3 className="mb-4 text-2xl font-bold text-black">Score Breakdown</h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-2xl font-bold text-black">Score Breakdown</h3>
+          {overallDelta !== null && (
+            <span
+              className={`rounded-full px-3 py-1 text-sm font-bold ${
+                overallDelta > 0
+                  ? "bg-emerald-50 text-emerald-600"
+                  : overallDelta < 0
+                  ? "bg-red-50 text-red-500"
+                  : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {overallDelta > 0 ? `+${overallDelta}` : overallDelta === 0 ? "No change" : overallDelta} overall
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <ScoreBar label="MECE" score={scores.mece} comment={feedback.meceComment} />
-          <ScoreBar label="Case Fit" score={scores.caseFit} comment={feedback.caseFitComment} />
+          <ScoreBar label="MECE" score={scores.mece} comment={feedback.meceComment} previousScore={previousScores?.mece} />
+          <ScoreBar label="Case Fit" score={scores.caseFit} comment={feedback.caseFitComment} previousScore={previousScores?.caseFit} />
           <div className="sm:col-span-2">
             <ScoreBar
               label="Hypothesis & Prioritization"
@@ -423,6 +492,7 @@ export default function Scorecard({
               comment={feedback.hypothesisAndPrioritizationComment}
               onClick={hypothesisClickable ? () => setDrillOpen((o) => !o) : undefined}
               active={drillOpen}
+              previousScore={previousScores?.hypothesisAndPrioritization}
             />
             {drillOpen && casePrompt && (
               <HypothesisDrillPanel
@@ -431,9 +501,9 @@ export default function Scorecard({
               />
             )}
           </div>
-          <ScoreBar label="Depth" score={scores.depth} comment={feedback.depthComment} />
-          <ScoreBar label="Clarifying Questions" score={scores.clarifyingQuestions} comment={feedback.clarifyingQuestionsComment} />
-          <ScoreBar label="Delivery" score={scores.delivery} comment={feedback.deliveryComment} />
+          <ScoreBar label="Depth" score={scores.depth} comment={feedback.depthComment} previousScore={previousScores?.depth} />
+          <ScoreBar label="Clarifying Questions" score={scores.clarifyingQuestions} comment={feedback.clarifyingQuestionsComment} previousScore={previousScores?.clarifyingQuestions} />
+          <ScoreBar label="Delivery" score={scores.delivery} comment={feedback.deliveryComment} previousScore={previousScores?.delivery} />
         </div>
       </div>
 
@@ -460,19 +530,27 @@ export default function Scorecard({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-3">
+        {onRetryWithFeedback && (
+          <button
+            onClick={onRetryWithFeedback}
+            className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
+          >
+            Retry with Feedback
+            <span aria-hidden="true">&rarr;</span>
+          </button>
+        )}
         <button
           onClick={onPracticeAgain}
-          className="inline-flex items-center gap-2 rounded-full bg-[#00A651] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#008C44]"
+          className="inline-flex items-center gap-2 rounded-full border-2 border-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white"
         >
-          Practice Another Case
-          <span aria-hidden="true">&rarr;</span>
+          New Case
         </button>
         <Link
           href="/dashboard"
-          className="rounded-full border-2 border-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-black transition-colors hover:bg-black hover:text-white"
+          className="rounded-full px-6 py-3 text-sm font-semibold uppercase tracking-wide text-gray-500 transition-colors hover:text-black"
         >
-          Back to Dashboard
+          Dashboard
         </Link>
       </div>
     </div>
